@@ -257,7 +257,7 @@ def draw_node_list():
     for i, node_num in enumerate(globals.node_list):
         node = globals.interface.nodesByNum[node_num]
         secure = 'user' in node and 'publicKey' in node['user'] and node['user']['publicKey']
-        node_str = f"{'🔒' if secure else '🔓'} {get_name_from_database(node_num, 'long')}".ljust(box_width - 2)[:box_width - 2]
+        node_str = f"{'🔐' if secure else '🔓'} {get_name_from_database(node_num, 'long')}".ljust(box_width - 2)[:box_width - 2]
         nodes_pad.addstr(i, 1, node_str, get_color("node_list", reverse=globals.selected_node == i and globals.current_window == 2))
 
     nodes_box.attrset(get_color("window_frame_selected") if globals.current_window == 2 else get_color("window_frame"))
