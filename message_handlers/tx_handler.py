@@ -3,7 +3,7 @@ import google.protobuf.json_format
 from meshtastic import BROADCAST_NUM
 from meshtastic.protobuf import mesh_pb2, portnums_pb2
 
-from db_handler import save_message_to_db, update_ack_nak, get_name_from_database
+from db_handler import save_message_to_db, update_ack_nak, get_name_from_database, is_chat_archived, update_node_info_in_db
 import default_config as config
 import globals
 
@@ -93,6 +93,9 @@ def on_response_traceroute(packet):
     if(packet['from'] not in globals.channel_list):
         globals.channel_list.append(packet['from'])
         refresh_channels = True
+
+    if(is_chat_archived(packet['from'])):
+        update_node_info_in_db(packet['from'], chat_archived=False)
 
     channel_number = globals.channel_list.index(packet['from'])
 
