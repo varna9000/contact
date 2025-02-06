@@ -27,7 +27,9 @@ def draw_node_details():
                          f"({node['user']['shortName']})"
                            if 'user' in node and 'shortName' in node['user'] else "",
                          f" | {node['user']['hwModel']}"
-                           if 'user' in node and 'hwModel' in node['user'] else ""]
+                           if 'user' in node and 'hwModel' in node['user'] else "",
+                         f" | {node['user']['role']}"
+                           if 'user' in node and 'role' in node['user'] else ""]
 
     if globals.node_list[globals.selected_node] == globals.myNodeNum:
         node_details_list.extend([f" | Bat: {node['deviceMetrics']['batteryLevel']}% ({node['deviceMetrics']['voltage']}v)"
