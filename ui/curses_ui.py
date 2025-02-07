@@ -9,6 +9,230 @@ import default_config as config
 import ui.dialog
 import globals
 
+
+def main_ui(stdscr):
+    global messages_pad, messages_box, nodes_pad, nodes_box, channel_pad, channel_box, function_win, packetlog_win, entry_win
+    messages_pad = messages_box = nodes_pad = nodes_box = channel_pad = channel_box = function_win = packetlog_win = entry_win = None
+
+    stdscr.keypad(True)
+    get_channels()
+
+    input_text = ""
+
+    handle_resize(stdscr, True)
+
+    while True:
+        draw_text_field(entry_win, f"Input: {input_text[-(stdscr.getmaxyx()[1] - 10):]}", get_color("input"))
+
+        # Get user input from entry window
+        char = entry_win.get_wch()
+
+        # draw_debug(f"Keypress: {char}")
+
+        if char == curses.KEY_UP:
+            if globals.current_window == 0:
+                scroll_channels(-1)
+            elif globals.current_window == 1:
+                scroll_messages(-1)
+            elif globals.current_window == 2:
+                scroll_nodes(-1)
+
+        elif char == curses.KEY_DOWN:
+            if globals.current_window == 0:
+                scroll_channels(1)
+            elif globals.current_window == 1:
+                scroll_messages(1)
+            elif globals.current_window == 2:
+                scroll_nodes(1)
+
+        elif char == curses.KEY_HOME:
+            if globals.current_window == 0:
+                select_channel(0)
+            elif globals.current_window == 1:
+                globals.selected_message = 0
+                refresh_pad(1)
+            elif globals.current_window == 2:
+                select_node(0)
+
+        elif char == curses.KEY_END:
+            if globals.current_window == 0:
+                select_channel(len(globals.channel_list) - 1)
+            elif globals.current_window == 1:
+                msg_line_count = messages_pad.getmaxyx()[0]
+                globals.selected_message = max(msg_line_count - get_msg_window_lines(), 0)
+                refresh_pad(1)
+            elif globals.current_window == 2:
+                select_node(len(globals.node_list) - 1)
+
+        elif char == curses.KEY_PPAGE:
+            if globals.current_window == 0:
+                select_channel(globals.selected_channel - (channel_box.getmaxyx()[0] - 2)) # select_channel will bounds check for us
+            elif globals.current_window == 1:
+                globals.selected_message = max(globals.selected_message - get_msg_window_lines(), 0)
+                refresh_pad(1)
+            elif globals.current_window == 2:
+                select_node(globals.selected_node - (nodes_box.getmaxyx()[0] - 2)) # select_node will bounds check for us
+
+        elif char == curses.KEY_NPAGE:
+            if globals.current_window == 0:
+                select_channel(globals.selected_channel + (channel_box.getmaxyx()[0] - 2)) # select_channel will bounds check for us
+            elif globals.current_window == 1:
+                msg_line_count = messages_pad.getmaxyx()[0]
+                globals.selected_message = min(globals.selected_message + get_msg_window_lines(), msg_line_count - get_msg_window_lines())
+                refresh_pad(1)
+            elif globals.current_window == 2:
+                select_node(globals.selected_node + (nodes_box.getmaxyx()[0] - 2)) # select_node will bounds check for us
+
+        elif char == curses.KEY_LEFT or char == curses.KEY_RIGHT:
+            delta = -1 if char == curses.KEY_LEFT else 1
+
+            old_window = globals.current_window
+            globals.current_window = (globals.current_window + delta) % 3
+
+            if old_window == 0:
+                channel_box.attrset(get_color("window_frame"))
+                channel_box.box()
+                channel_box.refresh()
+                highlight_line(False, 0, globals.selected_channel)
+                refresh_pad(0)
+            if old_window == 1:
+                messages_box.attrset(get_color("window_frame"))
+                messages_box.box()
+                messages_box.refresh()
+                refresh_pad(1)
+            elif old_window == 2:
+                draw_function_win()
+                nodes_box.attrset(get_color("window_frame"))
+                nodes_box.box()
+                nodes_box.refresh()
+                highlight_line(False, 2, globals.selected_node)
+                refresh_pad(2)
+
+            if globals.current_window == 0:
+                channel_box.attrset(get_color("window_frame_selected"))
+                channel_box.box()
+                channel_box.attrset(get_color("window_frame"))
+                channel_box.refresh()
+                highlight_line(True, 0, globals.selected_channel)
+                refresh_pad(0)
+            elif globals.current_window == 1:
+                messages_box.attrset(get_color("window_frame_selected"))
+                messages_box.box()
+                messages_box.attrset(get_color("window_frame"))
+                messages_box.refresh()
+                refresh_pad(1)
+            elif globals.current_window == 2:
+                draw_function_win()
+                nodes_box.attrset(get_color("window_frame_selected"))
+                nodes_box.box()
+                nodes_box.attrset(get_color("window_frame"))
+                nodes_box.refresh()
+                highlight_line(True, 2, globals.selected_node)
+                refresh_pad(2)
+
+        # Check for Esc
+        elif char == chr(27):
+            break
+
+        # Check for Ctrl + t
+        elif char == chr(20):
+            send_traceroute()
+            curses.curs_set(0)  # Hide cursor
+            ui.dialog.dialog(stdscr, "Traceroute Sent", "Results will appear in messages window.\nNote: Traceroute is limited to once every 30 seconds.")
+            curses.curs_set(1)  # Show cursor again
+            handle_resize(stdscr, False)
+
+        elif char in (chr(curses.KEY_ENTER), chr(10), chr(13)):
+            if globals.current_window == 2:
+                node_list = globals.node_list
+                if node_list[globals.selected_node] not in globals.channel_list:
+                    globals.channel_list.append(node_list[globals.selected_node])
+                if(node_list[globals.selected_node] not in globals.all_messages):
+                    globals.all_messages[node_list[globals.selected_node]] = []
+
+
+                globals.selected_channel = globals.channel_list.index(node_list[globals.selected_node])
+
+                if(is_chat_archived(globals.channel_list[globals.selected_channel])):
+                    update_node_info_in_db(globals.channel_list[globals.selected_channel], chat_archived=False)
+
+                globals.selected_node = 0
+                globals.current_window = 0
+
+                draw_node_list()
+                draw_channel_list()
+                draw_messages_window(True)
+
+            elif len(input_text) > 0:
+                # Enter key pressed, send user input as message
+                send_message(input_text, channel=globals.selected_channel)
+                draw_messages_window(True)
+
+                # Clear entry window and reset input text
+                input_text = ""
+                entry_win.erase()
+
+        elif char in (curses.KEY_BACKSPACE, chr(127)):
+            if input_text:
+                input_text = input_text[:-1]
+                y, x = entry_win.getyx()
+                entry_win.move(y, x - 1)
+                entry_win.addch(' ')  #
+                entry_win.move(y, x - 1)
+            entry_win.refresh()
+            
+        elif char == "`": # ` Launch the settings interface
+            curses.curs_set(0)
+            settings_menu(stdscr, globals.interface)
+            curses.curs_set(1)
+            refresh_node_list()
+            handle_resize(stdscr, False)
+        
+        elif char == chr(16):
+            # Display packet log
+            if globals.display_log is False:
+                globals.display_log = True
+                draw_messages_window(True)
+            else:
+                globals.display_log = False
+                packetlog_win.erase()
+                draw_messages_window(True)
+
+        elif char == curses.KEY_RESIZE:
+            input_text = ""
+            handle_resize(stdscr, False)
+
+        # ^D
+        elif char == chr(4):
+            if(globals.current_window == 0):
+                if(isinstance(globals.channel_list[globals.selected_channel], int)):
+                    update_node_info_in_db(globals.channel_list[globals.selected_channel], chat_archived=True)
+
+                    # Shift notifications up to account for deleted item
+                    for i in range(len(globals.notifications)):
+                        if globals.notifications[i] > globals.selected_channel:
+                            globals.notifications[i] -= 1
+
+                    del globals.channel_list[globals.selected_channel]
+                    globals.selected_channel = min(globals.selected_channel, len(globals.channel_list) - 1)
+                    select_channel(globals.selected_channel)
+                    draw_channel_list()
+                    draw_messages_window()
+
+        elif char == chr(31):
+            if(globals.current_window == 2 or globals.current_window == 0):
+                search(globals.current_window)
+
+        else:
+            # Append typed character to input text
+            if(isinstance(char, str)):
+                input_text += char
+            else:
+                input_text += chr(char)
+
+
+
+
 def draw_node_details():
     node = None
     try:
@@ -409,7 +633,7 @@ def search(win):
     entry_win.erase()
 
 def handle_resize(stdscr, firstrun):
-    global messages_pad, messages_box, nodes_pad, nodes_box, channel_pad, channel_box, function_win, packetlog_win, entry_win
+    # global messages_pad, messages_box, nodes_pad, nodes_box, channel_pad, channel_box, function_win, packetlog_win, entry_win
 
     # Calculate window max dimensions
     height, width = stdscr.getmaxyx()
@@ -495,225 +719,3 @@ def handle_resize(stdscr, firstrun):
         # Resize events can come faster than we can re-draw, which can cause a curses error.
         # In this case we'll see another curses.KEY_RESIZE in our key handler and draw again later.
         pass
-
-def main_ui(stdscr):
-    global messages_pad, messages_box, nodes_pad, nodes_box, channel_pad, channel_box, function_win, packetlog_win, entry_win
-    messages_pad = messages_box = nodes_pad = nodes_box = channel_pad = channel_box = function_win = packetlog_win = entry_win = None
-
-    stdscr.keypad(True)
-    get_channels()
-
-    input_text = ""
-
-    handle_resize(stdscr, True)
-
-    while True:
-        draw_text_field(entry_win, f"Input: {input_text[-(stdscr.getmaxyx()[1] - 10):]}", get_color("input"))
-
-        # Get user input from entry window
-        char = entry_win.get_wch()
-
-        # draw_debug(f"Keypress: {char}")
-
-        if char == curses.KEY_UP:
-            if globals.current_window == 0:
-                scroll_channels(-1)
-            elif globals.current_window == 1:
-                scroll_messages(-1)
-            elif globals.current_window == 2:
-                scroll_nodes(-1)
-
-        elif char == curses.KEY_DOWN:
-            if globals.current_window == 0:
-                scroll_channels(1)
-            elif globals.current_window == 1:
-                scroll_messages(1)
-            elif globals.current_window == 2:
-                scroll_nodes(1)
-
-        elif char == curses.KEY_HOME:
-            if globals.current_window == 0:
-                select_channel(0)
-            elif globals.current_window == 1:
-                globals.selected_message = 0
-                refresh_pad(1)
-            elif globals.current_window == 2:
-                select_node(0)
-
-        elif char == curses.KEY_END:
-            if globals.current_window == 0:
-                select_channel(len(globals.channel_list) - 1)
-            elif globals.current_window == 1:
-                msg_line_count = messages_pad.getmaxyx()[0]
-                globals.selected_message = max(msg_line_count - get_msg_window_lines(), 0)
-                refresh_pad(1)
-            elif globals.current_window == 2:
-                select_node(len(globals.node_list) - 1)
-
-        elif char == curses.KEY_PPAGE:
-            if globals.current_window == 0:
-                select_channel(globals.selected_channel - (channel_box.getmaxyx()[0] - 2)) # select_channel will bounds check for us
-            elif globals.current_window == 1:
-                globals.selected_message = max(globals.selected_message - get_msg_window_lines(), 0)
-                refresh_pad(1)
-            elif globals.current_window == 2:
-                select_node(globals.selected_node - (nodes_box.getmaxyx()[0] - 2)) # select_node will bounds check for us
-
-        elif char == curses.KEY_NPAGE:
-            if globals.current_window == 0:
-                select_channel(globals.selected_channel + (channel_box.getmaxyx()[0] - 2)) # select_channel will bounds check for us
-            elif globals.current_window == 1:
-                msg_line_count = messages_pad.getmaxyx()[0]
-                globals.selected_message = min(globals.selected_message + get_msg_window_lines(), msg_line_count - get_msg_window_lines())
-                refresh_pad(1)
-            elif globals.current_window == 2:
-                select_node(globals.selected_node + (nodes_box.getmaxyx()[0] - 2)) # select_node will bounds check for us
-
-        elif char == curses.KEY_LEFT or char == curses.KEY_RIGHT:
-            delta = -1 if char == curses.KEY_LEFT else 1
-
-            old_window = globals.current_window
-            globals.current_window = (globals.current_window + delta) % 3
-
-            if old_window == 0:
-                channel_box.attrset(get_color("window_frame"))
-                channel_box.box()
-                channel_box.refresh()
-                highlight_line(False, 0, globals.selected_channel)
-                refresh_pad(0)
-            if old_window == 1:
-                messages_box.attrset(get_color("window_frame"))
-                messages_box.box()
-                messages_box.refresh()
-                refresh_pad(1)
-            elif old_window == 2:
-                draw_function_win()
-                nodes_box.attrset(get_color("window_frame"))
-                nodes_box.box()
-                nodes_box.refresh()
-                highlight_line(False, 2, globals.selected_node)
-                refresh_pad(2)
-
-            if globals.current_window == 0:
-                channel_box.attrset(get_color("window_frame_selected"))
-                channel_box.box()
-                channel_box.attrset(get_color("window_frame"))
-                channel_box.refresh()
-                highlight_line(True, 0, globals.selected_channel)
-                refresh_pad(0)
-            elif globals.current_window == 1:
-                messages_box.attrset(get_color("window_frame_selected"))
-                messages_box.box()
-                messages_box.attrset(get_color("window_frame"))
-                messages_box.refresh()
-                refresh_pad(1)
-            elif globals.current_window == 2:
-                draw_function_win()
-                nodes_box.attrset(get_color("window_frame_selected"))
-                nodes_box.box()
-                nodes_box.attrset(get_color("window_frame"))
-                nodes_box.refresh()
-                highlight_line(True, 2, globals.selected_node)
-                refresh_pad(2)
-
-        # Check for Esc
-        elif char == chr(27):
-            break
-
-        # Check for Ctrl + t
-        elif char == chr(20):
-            send_traceroute()
-            curses.curs_set(0)  # Hide cursor
-            ui.dialog.dialog(stdscr, "Traceroute Sent", "Results will appear in messages window.\nNote: Traceroute is limited to once every 30 seconds.")
-            curses.curs_set(1)  # Show cursor again
-            handle_resize(stdscr, False)
-
-        elif char in (chr(curses.KEY_ENTER), chr(10), chr(13)):
-            if globals.current_window == 2:
-                node_list = globals.node_list
-                if node_list[globals.selected_node] not in globals.channel_list:
-                    globals.channel_list.append(node_list[globals.selected_node])
-                if(node_list[globals.selected_node] not in globals.all_messages):
-                    globals.all_messages[node_list[globals.selected_node]] = []
-
-
-                globals.selected_channel = globals.channel_list.index(node_list[globals.selected_node])
-
-                if(is_chat_archived(globals.channel_list[globals.selected_channel])):
-                    update_node_info_in_db(globals.channel_list[globals.selected_channel], chat_archived=False)
-
-                globals.selected_node = 0
-                globals.current_window = 0
-
-                draw_node_list()
-                draw_channel_list()
-                draw_messages_window(True)
-
-            elif len(input_text) > 0:
-                # Enter key pressed, send user input as message
-                send_message(input_text, channel=globals.selected_channel)
-                draw_messages_window(True)
-
-                # Clear entry window and reset input text
-                input_text = ""
-                entry_win.erase()
-
-        elif char in (curses.KEY_BACKSPACE, chr(127)):
-            if input_text:
-                input_text = input_text[:-1]
-                y, x = entry_win.getyx()
-                entry_win.move(y, x - 1)
-                entry_win.addch(' ')  #
-                entry_win.move(y, x - 1)
-            entry_win.refresh()
-            
-        elif char == "`": # ` Launch the settings interface
-            curses.curs_set(0)
-            settings_menu(stdscr, globals.interface)
-            curses.curs_set(1)
-            refresh_node_list()
-            handle_resize(stdscr, False)
-        
-        elif char == chr(16):
-            # Display packet log
-            if globals.display_log is False:
-                globals.display_log = True
-                draw_messages_window(True)
-            else:
-                globals.display_log = False
-                packetlog_win.erase()
-                draw_messages_window(True)
-
-        elif char == curses.KEY_RESIZE:
-            input_text = ""
-            handle_resize(stdscr, False)
-
-        # ^D
-        elif char == chr(4):
-            if(globals.current_window == 0):
-                if(isinstance(globals.channel_list[globals.selected_channel], int)):
-                    update_node_info_in_db(globals.channel_list[globals.selected_channel], chat_archived=True)
-
-                    # Shift notifications up to account for deleted item
-                    for i in range(len(globals.notifications)):
-                        if globals.notifications[i] > globals.selected_channel:
-                            globals.notifications[i] -= 1
-
-                    del globals.channel_list[globals.selected_channel]
-                    globals.selected_channel = min(globals.selected_channel, len(globals.channel_list) - 1)
-                    select_channel(globals.selected_channel)
-                    draw_channel_list()
-                    draw_messages_window()
-
-        elif char == chr(31):
-            if(globals.current_window == 2 or globals.current_window == 0):
-                search(globals.current_window)
-
-        else:
-            # Append typed character to input text
-            if(isinstance(char, str)):
-                input_text += char
-            else:
-                input_text += chr(char)
-
-
