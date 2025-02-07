@@ -633,7 +633,7 @@ def search(win):
     entry_win.erase()
 
 def handle_resize(stdscr, firstrun):
-    # global messages_pad, messages_box, nodes_pad, nodes_box, channel_pad, channel_box, function_win, packetlog_win, entry_win
+    global messages_pad, messages_box, nodes_pad, nodes_box, channel_pad, channel_box, function_win, packetlog_win, entry_win
 
     # Calculate window max dimensions
     height, width = stdscr.getmaxyx()
