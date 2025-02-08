@@ -71,8 +71,11 @@ def handle_resize(stdscr, firstrun):
         packetlog_win.resize(int(height / 3), messages_width)
         packetlog_win.mvwin(height - int(height / 3) - 3, channel_width)
 
-        if 'nodes_pad' not in globals():
-            nodes_pad = curses.newpad(1, 1)
+        # Reinitialize `nodes_pad` in case it was lost during a resize
+        try:
+            nodes_pad.getmaxyx()  # Check if it's still valid
+        except:
+            nodes_pad = curses.newpad(1, 1)  # Recreate if needed
 
 
     channel_win.box()
