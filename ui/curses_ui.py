@@ -1,5 +1,7 @@
 import curses
 import textwrap
+import logging
+import traceback
 from utilities.utils import get_channels, get_readable_duration, get_time_ago, refresh_node_list
 from settings import settings_menu
 from message_handlers.tx_handler import send_message, send_traceroute
@@ -432,9 +434,13 @@ def draw_messages_window(scroll_to_bottom = False):
     draw_packetlog_win()
 
 def draw_node_list():
-    nodes_pad.erase()
-    box_width = nodes_win.getmaxyx()[1]
-    nodes_pad.resize(len(globals.node_list) + 1, box_width)
+    try:
+        nodes_pad.erase()
+        box_width = nodes_win.getmaxyx()[1]
+        nodes_pad.resize(len(globals.node_list) + 1, box_width)
+    except Exception as e: 
+        logging.error(f"Error Drawing Nodes List: {e}")
+        logging.error("Traceback: %s", traceback.format_exc())
 
     for i, node_num in enumerate(globals.node_list):
         node = globals.interface.nodesByNum[node_num]
