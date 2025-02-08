@@ -10,10 +10,9 @@ import ui.dialog
 import globals
 
 
-messages_pad = messages_box = nodes_pad = nodes_box = channel_pad = channel_box = function_win = packetlog_win = entry_win = None
-
 def main_ui(stdscr):
     global messages_pad, messages_box, nodes_pad, nodes_box, channel_pad, channel_box, function_win, packetlog_win, entry_win
+    messages_pad = messages_box = nodes_pad = nodes_box = channel_pad = channel_box = function_win = packetlog_win = entry_win = None
 
     stdscr.keypad(True)
     get_channels()
