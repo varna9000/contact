@@ -54,7 +54,7 @@ def main(stdscr):
         pub.subscribe(on_receive, 'meshtastic.receive')
         init_nodedb()
         load_messages_from_db()
-        time.sleep(1)
+        time.sleep(5)
         logging.info("Starting main UI")
         main_ui(stdscr)
     except Exception as e:
