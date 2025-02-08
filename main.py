@@ -11,6 +11,7 @@ from pubsub import pub
 import os
 import logging
 import traceback
+import time
 
 from utilities.arg_parser import setup_parser
 from utilities.interfaces import initialize_interface
@@ -53,6 +54,7 @@ def main(stdscr):
         pub.subscribe(on_receive, 'meshtastic.receive')
         init_nodedb()
         load_messages_from_db()
+        time.sleep(1)
         logging.info("Starting main UI")
         main_ui(stdscr)
     except Exception as e:
