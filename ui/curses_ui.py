@@ -73,7 +73,8 @@ def handle_resize(stdscr, firstrun):
         packetlog_win.resize(int(height / 3), messages_width)
         packetlog_win.mvwin(height - int(height / 3) - 3, channel_width)
 
-        # Reinitialize `nodes_pad` in case it was lost during a resize
+        # Reinitialize `nodes_pad` in case it was lost during a resize.
+        # We shouldn't need this but nodes_pad keeps throwing and error in draw_node_list so...
         try:
             nodes_pad.getmaxyx()  # Check if it's still valid
         except:
@@ -664,12 +665,6 @@ def get_msg_window_lines():
 def refresh_pad(window):
     win_height = channel_win.getmaxyx()[0]
 
-    selected_item = globals.selected_channel
-    pad = channel_pad
-    box = channel_win
-    lines = box.getmaxyx()[0] - 2
-    start_index = max(0, selected_item - (win_height - 3))  # Leave room for borders
-
     if(window == 1):
         pad = messages_pad
         box = messages_win
@@ -681,13 +676,19 @@ def refresh_pad(window):
             packetlog_win.box()
             packetlog_win.refresh()
 
-    if(window == 2):
+    elif(window == 2):
         pad = nodes_pad
         box = nodes_win
         lines = box.getmaxyx()[0] - 2
         selected_item = globals.selected_node
         start_index = max(0, selected_item - (win_height - 3))  # Leave room for borders
 
+    else:
+        pad = channel_pad
+        box = channel_win
+        lines = box.getmaxyx()[0] - 2
+        selected_item = globals.selected_channel
+        start_index = max(0, selected_item - (win_height - 3))  # Leave room for borders
 
     pad.refresh(start_index, 0,
                         box.getbegyx()[0] + 1, box.getbegyx()[1] + 1,
