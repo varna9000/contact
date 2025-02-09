@@ -11,6 +11,7 @@ from pubsub import pub
 import os
 import logging
 import traceback
+import threading
 
 from utilities.arg_parser import setup_parser
 from utilities.interfaces import initialize_interface
@@ -38,6 +39,8 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+globals.lock = threading.Lock()
+
 def main(stdscr):
     try:
         draw_splash(stdscr)
@@ -45,15 +48,16 @@ def main(stdscr):
         args = parser.parse_args()
 
         logging.info("Initializing interface %s", args)
-        globals.interface = initialize_interface(args)
-        logging.info("Interface initialized")
-        globals.myNodeNum = get_nodeNum()
-        globals.channel_list = get_channels()
-        globals.node_list = get_node_list()
-        pub.subscribe(on_receive, 'meshtastic.receive')
-        init_nodedb()
-        load_messages_from_db()
-        logging.info("Starting main UI")
+        with globals.lock: 
+            globals.interface = initialize_interface(args)
+            logging.info("Interface initialized")
+            globals.myNodeNum = get_nodeNum()
+            globals.channel_list = get_channels()
+            globals.node_list = get_node_list()
+            pub.subscribe(on_receive, 'meshtastic.receive')
+            init_nodedb()
+            load_messages_from_db()
+            logging.info("Starting main UI")
         main_ui(stdscr)
     except Exception as e:
         logging.error("An error occurred: %s", e)

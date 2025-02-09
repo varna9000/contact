@@ -144,6 +144,7 @@ def load_messages_from_db():
 
 def init_nodedb():
     """Initialize the node database and update it with nodes from the interface."""
+    
     try:
         if not globals.interface.nodes:
             return  # No nodes to initialize
