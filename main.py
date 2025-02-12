@@ -66,8 +66,6 @@ def main(stdscr):
             confirmation = get_list_input("Your region is UNSET.  Set it now?", "Yes",  ["Yes", "No"])
             if confirmation == "Yes":
                 set_region()
-                globals.interface.close()
-                globals.interface = initialize_interface(args)
             
         main_ui(stdscr)
     except Exception as e:
