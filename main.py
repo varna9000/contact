@@ -52,7 +52,10 @@ def main(stdscr):
         logging.info("Initializing interface %s", args)
         with globals.lock: 
             globals.interface = initialize_interface(args)
-
+            if globals.interface.localNode.localConfig.lora.region == 0:
+                confirmation = get_list_input("Your region is UNSET.  Set it now?", "Yes",  ["Yes", "No"])
+                if confirmation == "Yes":
+                    set_region()
             logging.info("Interface initialized")
             globals.myNodeNum = get_nodeNum()
             globals.channel_list = get_channels()
@@ -61,11 +64,6 @@ def main(stdscr):
             init_nodedb()
             load_messages_from_db()
             logging.info("Starting main UI")
-
-        if globals.interface.localNode.localConfig.lora.region == 0:
-            confirmation = get_list_input("Your region is UNSET.  Set it now?", "Yes",  ["Yes", "No"])
-            if confirmation == "Yes":
-                set_region()
             
         main_ui(stdscr)
     except Exception as e:
