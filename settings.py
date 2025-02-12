@@ -352,9 +352,20 @@ def settings_menu(stdscr, interface):
 def set_region():
     node = globals.interface.getNode('^local')
     device_config = node.localConfig
-    regions = [region.name for region in device_config.lora.DESCRIPTOR.fields_by_name["region"].enum_type.values]
-    new_region = get_list_input('Select your region:', 'UNSET', regions)
-    node.localConfig.lora.region = new_region
+    lora_descriptor = device_config.lora.DESCRIPTOR
+
+    # Get the enum mapping of region names to their numerical values
+    region_enum = lora_descriptor.fields_by_name["region"].enum_type
+    region_name_to_number = {v.name: v.number for v in region_enum.values}
+
+    regions = list(region_name_to_number.keys())
+
+    new_region_name = get_list_input('Select your region:', 'UNSET', regions)
+
+    # Convert region name to corresponding enum number
+    new_region_number = region_name_to_number.get(new_region_name, 0)  # Default to 0 if not found
+
+    node.localConfig.lora.region = new_region_number
     node.writeConfig("lora")
     
 
