@@ -122,10 +122,5 @@ def save_changes(interface, menu_path, modified_settings):
         except Exception as e:
             logging.error(f"Failed to write configuration for category '{config_category}': {e}")
 
-
-        node.writeConfig(config_category)
-
-        logging.info(f"Changes written to config category: {config_category}")
-
     except Exception as e:
         logging.error(f"Error saving changes: {e}")
