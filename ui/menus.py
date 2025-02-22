@@ -14,7 +14,8 @@ def extract_fields(message_instance, current_config=None):
     menu = {}
     fields = message_instance.DESCRIPTOR.fields
     for field in fields:
-        if field.name in {"sessionkey", "channel_num", "id", "ignore_incoming"}:  # Skip certain fields
+        skip_fields = {"sessionkey", "ChannelSettings.channel_num", "ChannelSettings.id", "LoRaConfig.ignore_incoming"}
+        if any(skip_field in field.full_name for skip_field in skip_fields):
             continue
 
         if field.message_type:  # Nested message
