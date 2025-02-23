@@ -189,7 +189,7 @@ def settings_menu(stdscr, interface):
 
                     if os.path.exists(yaml_file_path):
                         overwrite = get_list_input(f"{filename} already exists. Overwrite?", None, ["Yes", "No"])
-                        if overwrite == "Yes":
+                        if overwrite == "No":
                             logging.info("Export cancelled: User chose not to overwrite.")
                             continue  # Return to menu
                     os.makedirs(os.path.dirname(yaml_file_path), exist_ok=True)
