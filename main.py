@@ -12,7 +12,6 @@ import os
 import logging
 import traceback
 import threading
-import sys
 
 from utilities.arg_parser import setup_parser
 from utilities.interfaces import initialize_interface
@@ -53,23 +52,12 @@ def main(stdscr):
         logging.info("Initializing interface %s", args)
         with globals.lock: 
             globals.interface = initialize_interface(args)
-
-            # Check if the interface was successfully initialized
-            if not globals.interface:
-                logging.critical("Failed to initialize interface. Exiting...")
-                sys.exit(1)  # Exit the program with an error code
-
             if globals.interface.localNode.localConfig.lora.region == 0:
-                confirmation = get_list_input("Your region is UNSET. Set it now?", "Yes", ["Yes", "No"])
+                confirmation = get_list_input("Your region is UNSET.  Set it now?", "Yes",  ["Yes", "No"])
                 if confirmation == "Yes":
                     set_region()
                     globals.interface.close()
                     globals.interface = initialize_interface(args)
-
-                # Ensure the new interface is valid after reinitialization
-                if not globals.interface:
-                    logging.critical("Re-initialization of interface failed. Exiting...")
-                    sys.exit(1)
             logging.info("Interface initialized")
             globals.myNodeNum = get_nodeNum()
             globals.channel_list = get_channels()
