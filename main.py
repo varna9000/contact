@@ -19,7 +19,9 @@ import contextlib
 from utilities.arg_parser import setup_parser
 from utilities.interfaces import initialize_interface
 from message_handlers.rx_handler import on_receive
-from ui.curses_ui import main_ui, draw_splash
+from ui.curses_ui import main_ui
+from ui.colors import setup_colors
+from ui.splash import draw_splash
 from input_handlers import get_list_input
 from utilities.utils import get_channels, get_node_list, get_nodeNum
 from settings import set_region
@@ -48,6 +50,8 @@ def main(stdscr):
     output_capture = io.StringIO()
     try:
         with contextlib.redirect_stdout(output_capture), contextlib.redirect_stderr(output_capture):
+
+            setup_colors()
             draw_splash(stdscr)
             parser = setup_parser()
             args = parser.parse_args()
