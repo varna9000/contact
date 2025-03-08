@@ -319,7 +319,10 @@ def draw_channel_list():
         if isinstance(channel, int):
             if is_chat_archived(channel):
                 continue
-            channel = get_name_from_database(channel, type='long')
+            channel_name = get_name_from_database(channel, type='long')
+            if channel_name is None:
+                continue
+            channel = channel_name
 
         # Determine whether to add the notification
         notification = " " + config.notification_symbol if idx in globals.notifications else ""
