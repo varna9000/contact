@@ -443,9 +443,9 @@ def draw_node_list():
     refresh_pad(2)
 
     # Restore cursor to input field
-    entry_win.move(1, len("Input: ") + len(input_text)+1)
-    entry_win.refresh()
+    entry_win.keypad(True)
     curses.curs_set(1)
+    entry_win.refresh()
 
 def select_channel(idx):
     old_selected_channel = globals.selected_channel
@@ -544,9 +544,9 @@ def draw_packetlog_win():
         packetlog_win.refresh()
 
     # Restore cursor to input field
-    entry_win.move(1, len("Input: ") + len(input_text)+1)
-    entry_win.refresh()
+    entry_win.keypad(True)
     curses.curs_set(1)
+    entry_win.refresh()
 
 def search(win):
     start_idx = globals.selected_node
