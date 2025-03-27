@@ -1,7 +1,7 @@
-import mtcontact.globals as globals
+import mcontact.globals as globals
 import datetime
 from meshtastic.protobuf import config_pb2
-import mtcontact.ui.default_config as config
+import mcontact.ui.default_config as config
 
 def get_channels():
     """Retrieve channels from the node and update globals.channel_list and globals.all_messages."""

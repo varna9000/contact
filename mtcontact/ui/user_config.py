@@ -1,9 +1,9 @@
 import os
 import json
 import curses
-from mtcontact.ui.colors import get_color, setup_colors, COLOR_MAP
-from mtcontact.ui.default_config import format_json_single_line_arrays, loaded_config
-from mtcontact.utilities.input_handlers import get_list_input
+from mcontact.ui.colors import get_color, setup_colors, COLOR_MAP
+from mcontact.ui.default_config import format_json_single_line_arrays, loaded_config
+from mcontact.utilities.input_handlers import get_list_input
 
 width = 60
 save_option_text = "Save Changes"

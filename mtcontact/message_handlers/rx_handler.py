@@ -1,11 +1,11 @@
 import logging
 import time
-from mtcontact.utilities.utils import refresh_node_list
+from mcontact.utilities.utils import refresh_node_list
 from datetime import datetime
-from mtcontact.ui.curses_ui import draw_packetlog_win, draw_node_list, draw_messages_window, draw_channel_list, add_notification
-from mtcontact.utilities.db_handler import save_message_to_db, maybe_store_nodeinfo_in_db, get_name_from_database, update_node_info_in_db
-import mtcontact.ui.default_config as config
-import mtcontact.globals as globals
+from mcontact.ui.curses_ui import draw_packetlog_win, draw_node_list, draw_messages_window, draw_channel_list, add_notification
+from mcontact.utilities.db_handler import save_message_to_db, maybe_store_nodeinfo_in_db, get_name_from_database, update_node_info_in_db
+import mcontact.ui.default_config as config
+import mcontact.globals as globals
 
 
 from datetime import datetime

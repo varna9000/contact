@@ -18,18 +18,18 @@ import logging
 import traceback
 import threading
 
-from mtcontact.utilities.db_handler import init_nodedb, load_messages_from_db
-from mtcontact.message_handlers.rx_handler import on_receive
-from mtcontact.settings import set_region
-from mtcontact.ui.curses_ui import main_ui
-from mtcontact.ui.colors import setup_colors
-from mtcontact.ui.splash import draw_splash
-import mtcontact.ui.default_config as config
-from mtcontact.utilities.arg_parser import setup_parser
-from mtcontact.utilities.interfaces import initialize_interface
-from mtcontact.utilities.input_handlers import get_list_input
-from mtcontact.utilities.utils import get_channels, get_node_list, get_nodeNum
-import mtcontact.globals as globals
+from mcontact.utilities.db_handler import init_nodedb, load_messages_from_db
+from mcontact.message_handlers.rx_handler import on_receive
+from mcontact.settings import set_region
+from mcontact.ui.curses_ui import main_ui
+from mcontact.ui.colors import setup_colors
+from mcontact.ui.splash import draw_splash
+import mcontact.ui.default_config as config
+from mcontact.utilities.arg_parser import setup_parser
+from mcontact.utilities.interfaces import initialize_interface
+from mcontact.utilities.input_handlers import get_list_input
+from mcontact.utilities.utils import get_channels, get_node_list, get_nodeNum
+import mcontact.globals as globals
 
 # Set ncurses compatibility settings
 os.environ["NCURSES_NO_UTF8_ACS"] = "1"

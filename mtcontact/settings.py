@@ -5,13 +5,13 @@ import logging
 import sys
 import traceback
 
-import mtcontact.ui.default_config as config
-from mtcontact.utilities.input_handlers import get_list_input
-from mtcontact.ui.colors import setup_colors
-from mtcontact.ui.splash import draw_splash
-from mtcontact.ui.control_ui import set_region, settings_menu
-from mtcontact.utilities.arg_parser import setup_parser
-from mtcontact.utilities.interfaces import initialize_interface
+import mcontact.ui.default_config as config
+from mcontact.utilities.input_handlers import get_list_input
+from mcontact.ui.colors import setup_colors
+from mcontact.ui.splash import draw_splash
+from mcontact.ui.control_ui import set_region, settings_menu
+from mcontact.utilities.arg_parser import setup_parser
+from mcontact.utilities.interfaces import initialize_interface
 
 
 def main(stdscr):
