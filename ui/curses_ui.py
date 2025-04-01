@@ -303,8 +303,10 @@ def main_ui(stdscr):
         elif char == chr(6):
             if globals.current_window == 2:
                 selectedNode = globals.interface.nodesByNum[globals.node_list[globals.selected_node]]
+
+                curses.curs_set(0)
+
                 if 'isFavorite' not in selectedNode or selectedNode['isFavorite'] == False:
-                    curses.curs_set(0)
                     confirmation = get_list_input(f"Set {get_name_from_database(globals.node_list[globals.selected_node])} as Favorite?", "no", ["yes", "no"])
                     if confirmation == "yes":
                         globals.interface.localNode.setFavorite(globals.node_list[globals.selected_node])
@@ -312,12 +314,8 @@ def main_ui(stdscr):
                         globals.interface.nodesByNum[globals.node_list[globals.selected_node]]['isFavorite'] = True
 
                         refresh_node_list()
-                        draw_node_list()
-                        draw_channel_list()
-                        draw_messages_window()
 
                 else:
-                    curses.curs_set(0)
                     confirmation = get_list_input(f"Remove {get_name_from_database(globals.node_list[globals.selected_node])} from Favorites?", "no", ["yes", "no"])
                     if confirmation == "yes":
                         globals.interface.localNode.removeFavorite(globals.node_list[globals.selected_node])
@@ -325,9 +323,27 @@ def main_ui(stdscr):
                         globals.interface.nodesByNum[globals.node_list[globals.selected_node]]['isFavorite'] = False
 
                         refresh_node_list()
-                        draw_node_list()
-                        draw_channel_list()
-                        draw_messages_window()
+
+                handle_resize(stdscr, False)
+
+        elif char == chr(7):
+            if globals.current_window == 2:
+                selectedNode = globals.interface.nodesByNum[globals.node_list[globals.selected_node]]
+
+                curses.curs_set(0)
+
+                if 'isIgnored' not in selectedNode or selectedNode['isIgnored'] == False:
+                    confirmation = get_list_input(f"Set {get_name_from_database(globals.node_list[globals.selected_node])} as Ignored?", "no", ["yes", "no"])
+                    if confirmation == "yes":
+                        globals.interface.localNode.setIgnored(globals.node_list[globals.selected_node])
+                        globals.interface.nodesByNum[globals.node_list[globals.selected_node]]['isIgnored'] = True
+                else:
+                    confirmation = get_list_input(f"Remove {get_name_from_database(globals.node_list[globals.selected_node])} from Ignored?", "no", ["yes", "no"])
+                    if confirmation == "yes":
+                        globals.interface.localNode.removeIgnored(globals.node_list[globals.selected_node])
+                        globals.interface.nodesByNum[globals.node_list[globals.selected_node]]['isIgnored'] = False
+
+                handle_resize(stdscr, False)
 
         else:
             # Append typed character to input text
@@ -650,7 +666,7 @@ def draw_node_details():
     draw_centered_text_field(function_win, nodestr, 0, get_color("commands"))
 
 def draw_help():
-    cmds = ["↑→↓← = Select", "    ENTER = Send", "    ` = Settings", "    ^P = Packet Log", "    ESC = Quit", "    ^t = Traceroute", "    ^d = Archive Chat", "    ^f = Favorite"]
+    cmds = ["↑→↓← = Select", "    ENTER = Send", "    ` = Settings", "    ^P = Packet Log", "    ESC = Quit", "    ^t = Traceroute", "    ^d = Archive Chat", "    ^f = Favorite", "    ^g = Ignore"]
     function_str = ""
     for s in cmds:
         if(len(function_str) + len(s) < function_win.getmaxyx()[1] - 2):
