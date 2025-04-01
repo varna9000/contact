@@ -3,9 +3,9 @@ import time
 import logging
 from datetime import datetime
 
-from mcontact.utilities.utils import decimal_to_hex
-import mcontact.ui.default_config as config
-import mcontact.globals as globals
+from contact.utilities.utils import decimal_to_hex
+import contact.ui.default_config as config
+import contact.globals as globals
 
 def get_table_name(channel):
     # Construct the table name

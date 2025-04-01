@@ -5,16 +5,16 @@ import os
 import re
 import sys
 
-from mcontact.utilities.save_to_radio import save_changes
-from mcontact.utilities.config_io import config_export, config_import
-from mcontact.utilities.input_handlers import get_repeated_input, get_text_input, get_fixed32_input, get_list_input, get_admin_key_input
-from mcontact.ui.menus import generate_menu_from_protobuf
-from mcontact.ui.colors import get_color
-from mcontact.ui.dialog import dialog
-from mcontact.utilities.control_utils import parse_ini_file, transform_menu_path
-from mcontact.ui.user_config import json_editor
+from contact.utilities.save_to_radio import save_changes
+from contact.utilities.config_io import config_export, config_import
+from contact.utilities.input_handlers import get_repeated_input, get_text_input, get_fixed32_input, get_list_input, get_admin_key_input
+from contact.ui.menus import generate_menu_from_protobuf
+from contact.ui.colors import get_color
+from contact.ui.dialog import dialog
+from contact.utilities.control_utils import parse_ini_file, transform_menu_path
+from contact.ui.user_config import json_editor
 
-import mcontact.localisations
+import contact.localisations
 
 # Constants
 width = 80
