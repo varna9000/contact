@@ -1,9 +1,9 @@
 import os
 import json
 import curses
-from ui.colors import get_color, setup_colors, COLOR_MAP
-from ui.default_config import format_json_single_line_arrays, loaded_config
-from utilities.input_handlers import get_list_input
+from contact.ui.colors import get_color, setup_colors, COLOR_MAP
+from contact.ui.default_config import format_json_single_line_arrays, loaded_config
+from contact.utilities.input_handlers import get_list_input
 
 width = 60
 save_option_text = "Save Changes"
@@ -196,7 +196,10 @@ def json_editor(stdscr):
     menu_path = ["App Settings"]
     selected_index = 0  # Track the selected option
 
-    file_path = "config.json"
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.abspath(os.path.join(script_dir, os.pardir))
+    file_path = os.path.join(parent_dir, "config.json")
+    # file_path = "config.json"
     show_save_option = True  # Always show the Save button
 
     # Ensure the file exists
