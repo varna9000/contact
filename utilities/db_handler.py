@@ -190,20 +190,14 @@ def maybe_store_nodeinfo_in_db(packet):
     except Exception as e:
         logging.error(f"Unexpected error in maybe_store_nodeinfo_in_db: {e}")
 
-def update_node_info_in_db(user_id, long_name=None, short_name=None, hw_model="UNSET", is_licensed=0, role="CLIENT", public_key="", chat_archived=0):
+def update_node_info_in_db(user_id, long_name=None, short_name=None, hw_model=None, is_licensed=None, role=None, public_key=None, chat_archived=None):
     """Update or insert node information into the database, preserving unchanged fields."""
     try:
         ensure_node_table_exists()  # Ensure the table exists before any operation
 
-        if long_name == None:
-            long_name = "Meshtastic " + str(decimal_to_hex(user_id)[-4:])
-        if short_name == None:
-            short_name = str(decimal_to_hex(user_id)[-4:])
-
         with sqlite3.connect(config.db_file_path) as db_connection:
             db_cursor = db_connection.cursor()
             table_name = f'"{globals.myNodeNum}_nodedb"'  # Quote in case of numeric names
-
 
             table_columns = [i[1] for i in db_cursor.execute(f'PRAGMA table_info({table_name})')]
             if "chat_archived" not in table_columns:
@@ -224,6 +218,14 @@ def update_node_info_in_db(user_id, long_name=None, short_name=None, hw_model="U
                 role = role if role is not None else existing_role
                 public_key = public_key if public_key is not None else existing_public_key
                 chat_archived = chat_archived if chat_archived is not None else existing_chat_archived
+
+            long_name = long_name if long_name is not None else "Meshtastic " + str(decimal_to_hex(user_id)[-4:])
+            short_name = short_name if short_name is not None else str(decimal_to_hex(user_id)[-4:])
+            hw_model = hw_model if hw_model is not None else "UNSET"
+            is_licensed = is_licensed if is_licensed is not None else 0
+            role = role if role is not None else "CLIENT"
+            public_key = public_key if public_key is not None else ""
+            chat_archived = chat_archived if chat_archived is not None else 0
 
             # Upsert logic
             upsert_query = f'''
