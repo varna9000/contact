@@ -54,11 +54,11 @@ If no connection arguments are specified, the client will attempt a serial conne
 ### Example Usage
 
 ```sh
-python main.py --port /dev/ttyUSB0
-python main.py --host 192.168.1.1
-python main.py --ble BlAddressOfDevice
+contact --port /dev/ttyUSB0
+contact --host 192.168.1.1
+contact --ble BlAddressOfDevice
 ```
 To quickly connect to localhost, use:
 ```sh
-python main.py -t
+contact -t
 ```
