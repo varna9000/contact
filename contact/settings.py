@@ -5,13 +5,13 @@ import logging
 import sys
 import traceback
 
-import ui.default_config as config
-from utilities.input_handlers import get_list_input
-from ui.colors import setup_colors
-from ui.splash import draw_splash
-from ui.control_ui import set_region, settings_menu
-from utilities.arg_parser import setup_parser
-from utilities.interfaces import initialize_interface
+import contact.ui.default_config as config
+from contact.utilities.input_handlers import get_list_input
+from contact.ui.colors import setup_colors
+from contact.ui.splash import draw_splash
+from contact.ui.control_ui import set_region, settings_menu
+from contact.utilities.arg_parser import setup_parser
+from contact.utilities.interfaces import initialize_interface
 
 
 def main(stdscr):

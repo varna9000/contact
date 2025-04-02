@@ -1,0 +1,21 @@
+[project]
+name = "contact"
+version = "1.3.0"
+description = "This Python curses client for Meshtastic is a terminal-based client designed to manage device settings, enable mesh chat communication, and handle configuration backups and restores."
+authors = [
+    {name = "Ben Lipsey",email = "ben@pdxlocations.com"}
+]
+license = "GPL-3.0-only"
+readme = "README.md"
+requires-python = ">=3.9,<3.14"
+dependencies = [
+    "meshtastic (>=2.6.0,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+contact = "contact.main:start"
