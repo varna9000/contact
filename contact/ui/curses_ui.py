@@ -7,6 +7,7 @@ from contact.settings import settings_menu
 from contact.message_handlers.tx_handler import send_message, send_traceroute
 from contact.ui.colors import setup_colors, get_color
 from contact.utilities.db_handler import get_name_from_database, update_node_info_in_db, is_chat_archived
+from contact.utilities.input_handlers import get_list_input
 import contact.ui.default_config as config
 import contact.ui.dialog
 import contact.globals as globals
@@ -293,9 +294,56 @@ def main_ui(stdscr):
                     draw_channel_list()
                     draw_messages_window()
 
+        # ^/
         elif char == chr(31):
             if(globals.current_window == 2 or globals.current_window == 0):
                 search(globals.current_window)
+
+        # ^F
+        elif char == chr(6):
+            if globals.current_window == 2:
+                selectedNode = globals.interface.nodesByNum[globals.node_list[globals.selected_node]]
+
+                curses.curs_set(0)
+
+                if 'isFavorite' not in selectedNode or selectedNode['isFavorite'] == False:
+                    confirmation = get_list_input(f"Set {get_name_from_database(globals.node_list[globals.selected_node])} as Favorite?", "no", ["yes", "no"])
+                    if confirmation == "yes":
+                        globals.interface.localNode.setFavorite(globals.node_list[globals.selected_node])
+                        # Maybe we shouldn't be modifying the nodedb, but maybe it should update itself
+                        globals.interface.nodesByNum[globals.node_list[globals.selected_node]]['isFavorite'] = True
+
+                        refresh_node_list()
+
+                else:
+                    confirmation = get_list_input(f"Remove {get_name_from_database(globals.node_list[globals.selected_node])} from Favorites?", "no", ["yes", "no"])
+                    if confirmation == "yes":
+                        globals.interface.localNode.removeFavorite(globals.node_list[globals.selected_node])
+                        # Maybe we shouldn't be modifying the nodedb, but maybe it should update itself
+                        globals.interface.nodesByNum[globals.node_list[globals.selected_node]]['isFavorite'] = False
+
+                        refresh_node_list()
+
+                handle_resize(stdscr, False)
+
+        elif char == chr(7):
+            if globals.current_window == 2:
+                selectedNode = globals.interface.nodesByNum[globals.node_list[globals.selected_node]]
+
+                curses.curs_set(0)
+
+                if 'isIgnored' not in selectedNode or selectedNode['isIgnored'] == False:
+                    confirmation = get_list_input(f"Set {get_name_from_database(globals.node_list[globals.selected_node])} as Ignored?", "no", ["yes", "no"])
+                    if confirmation == "yes":
+                        globals.interface.localNode.setIgnored(globals.node_list[globals.selected_node])
+                        globals.interface.nodesByNum[globals.node_list[globals.selected_node]]['isIgnored'] = True
+                else:
+                    confirmation = get_list_input(f"Remove {get_name_from_database(globals.node_list[globals.selected_node])} from Ignored?", "no", ["yes", "no"])
+                    if confirmation == "yes":
+                        globals.interface.localNode.removeIgnored(globals.node_list[globals.selected_node])
+                        globals.interface.nodesByNum[globals.node_list[globals.selected_node]]['isIgnored'] = False
+
+                handle_resize(stdscr, False)
 
         else:
             # Append typed character to input text
@@ -618,7 +666,7 @@ def draw_node_details():
     draw_centered_text_field(function_win, nodestr, 0, get_color("commands"))
 
 def draw_help():
-    cmds = ["↑→↓← = Select", "    ENTER = Send", "    ` = Settings", "    ^P = Packet Log", "    ESC = Quit", "    ^t = Traceroute", "    ^d = Archive Chat"]
+    cmds = ["↑→↓← = Select", "    ENTER = Send", "    ` = Settings", "    ^P = Packet Log", "    ESC = Quit", "    ^t = Traceroute", "    ^d = Archive Chat", "    ^f = Favorite", "    ^g = Ignore"]
     function_str = ""
     for s in cmds:
         if(len(function_str) + len(s) < function_win.getmaxyx()[1] - 2):
