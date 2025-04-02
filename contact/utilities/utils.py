@@ -47,8 +47,15 @@ def get_node_list():
                 return node['hopsAway'] if 'hopsAway' in node else 100
             else:
                 return node
+
         sorted_nodes = sorted(globals.interface.nodes.values(), key = node_sort)
+
+        # Move favorite nodes to the beginning
         sorted_nodes = sorted(sorted_nodes, key = lambda node: node['isFavorite'] if 'isFavorite' in node else False, reverse = True)
+
+        # Move ignored nodes to the end
+        sorted_nodes = sorted(sorted_nodes, key = lambda node: node['isIgnored'] if 'isIgnored' in node else False)
+
         node_list = [node['num'] for node in sorted_nodes if node['num'] != my_node_num]
         return [my_node_num] + node_list  # Ensuring your node is always first
     return []
