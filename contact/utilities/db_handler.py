@@ -3,9 +3,9 @@ import time
 import logging
 from datetime import datetime
 
-from utilities.utils import decimal_to_hex
-import default_config as config
-import globals
+from contact.utilities.utils import decimal_to_hex
+import contact.ui.default_config as config
+import contact.globals as globals
 
 def get_table_name(channel):
     # Construct the table name
@@ -144,14 +144,16 @@ def load_messages_from_db():
 
 def init_nodedb():
     """Initialize the node database and update it with nodes from the interface."""
+    
     try:
         if not globals.interface.nodes:
             return  # No nodes to initialize
 
         ensure_node_table_exists()  # Ensure the table exists before insertion
+        nodes_snapshot = list(globals.interface.nodes.values())
 
         # Insert or update all nodes
-        for node in globals.interface.nodes.values():
+        for node in nodes_snapshot:
             update_node_info_in_db(
                 user_id=node['num'],
                 long_name=node['user'].get('longName', ''),
@@ -188,7 +190,6 @@ def maybe_store_nodeinfo_in_db(packet):
     except Exception as e:
         logging.error(f"Unexpected error in maybe_store_nodeinfo_in_db: {e}")
 
-
 def update_node_info_in_db(user_id, long_name=None, short_name=None, hw_model=None, is_licensed=None, role=None, public_key=None, chat_archived=None):
     """Update or insert node information into the database, preserving unchanged fields."""
     try:
@@ -197,7 +198,6 @@ def update_node_info_in_db(user_id, long_name=None, short_name=None, hw_model=No
         with sqlite3.connect(config.db_file_path) as db_connection:
             db_cursor = db_connection.cursor()
             table_name = f'"{globals.myNodeNum}_nodedb"'  # Quote in case of numeric names
-
 
             table_columns = [i[1] for i in db_cursor.execute(f'PRAGMA table_info({table_name})')]
             if "chat_archived" not in table_columns:
@@ -218,6 +218,14 @@ def update_node_info_in_db(user_id, long_name=None, short_name=None, hw_model=No
                 role = role if role is not None else existing_role
                 public_key = public_key if public_key is not None else existing_public_key
                 chat_archived = chat_archived if chat_archived is not None else existing_chat_archived
+
+            long_name = long_name if long_name is not None else "Meshtastic " + str(decimal_to_hex(user_id)[-4:])
+            short_name = short_name if short_name is not None else str(decimal_to_hex(user_id)[-4:])
+            hw_model = hw_model if hw_model is not None else "UNSET"
+            is_licensed = is_licensed if is_licensed is not None else 0
+            role = role if role is not None else "CLIENT"
+            public_key = public_key if public_key is not None else ""
+            chat_archived = chat_archived if chat_archived is not None else 0
 
             # Upsert logic
             upsert_query = f'''

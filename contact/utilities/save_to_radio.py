@@ -2,8 +2,7 @@ from meshtastic.protobuf import channel_pb2
 from google.protobuf.message import Message
 import logging
 import base64
-from db_handler import update_node_info_in_db
-import globals
+import time
 
 def save_changes(interface, menu_path, modified_settings):
     """
@@ -18,6 +17,40 @@ def save_changes(interface, menu_path, modified_settings):
             return
         
         node = interface.getNode('^local')
+        admin_key_backup = None
+        if 'admin_key' in modified_settings:
+            # Get reference to security config
+            security_config = node.localConfig.security
+            admin_keys = modified_settings['admin_key']
+
+            # Filter out empty keys
+            valid_keys = [key for key in admin_keys if key and key.strip() and key != b'']
+
+            if not valid_keys:
+                logging.warning("No valid admin keys provided. Skipping admin key update.")
+            else:
+                # Clear existing keys if needed
+                if security_config.admin_key:
+                    logging.info("Clearing existing admin keys...")
+                    del security_config.admin_key[:]
+                    node.writeConfig("security")
+                    time.sleep(2)  # Give time for device to process
+
+                # Append new keys
+                for key in valid_keys:
+                    logging.info(f"Adding admin key: {key}")
+                    security_config.admin_key.append(key)
+                node.writeConfig("security")
+                logging.info("Admin keys updated successfully!")
+            
+            # Backup 'admin_key' before removing it
+            admin_key_backup = modified_settings.get('admin_key', None)
+            # Remove 'admin_key' from modified_settings to prevent interference
+            del modified_settings['admin_key']
+
+            # Return early if there are no other settings left to process
+            if not modified_settings:
+                return
 
         if menu_path[1] ==  "Radio Settings" or menu_path[1] == "Module Settings":
             config_category = menu_path[2].lower() # for radio and module configs
@@ -39,9 +72,6 @@ def save_changes(interface, menu_path, modified_settings):
             is_licensed = is_licensed == "True" or is_licensed is True  # Normalize boolean
 
             node.setOwner(long_name, short_name, is_licensed)
-
-            # Update only the changed fields and preserve others
-            update_node_info_in_db(globals.myNodeNum, long_name=long_name, short_name=short_name, is_licensed=is_licensed)
 
             logging.info(f"Updated {config_category} with Long Name: {long_name}, Short Name: {short_name}, Licensed Mode: {is_licensed}")
 
@@ -119,13 +149,11 @@ def save_changes(interface, menu_path, modified_settings):
         try:
             node.writeConfig(config_category)
             logging.info(f"Changes written to config category: {config_category}")
+
+            if admin_key_backup is not None:
+                modified_settings['admin_key'] = admin_key_backup
         except Exception as e:
             logging.error(f"Failed to write configuration for category '{config_category}': {e}")
-
-
-        node.writeConfig(config_category)
-
-        logging.info(f"Changes written to config category: {config_category}")
 
     except Exception as e:
         logging.error(f"Error saving changes: {e}")

@@ -1,0 +1,13 @@
+{
+    "version": "0.1.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "module": "contact.__main__",
+            "args": []
+        }
+    ]
+}

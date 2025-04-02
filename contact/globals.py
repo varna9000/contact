@@ -1,4 +1,5 @@
 interface = None
+lock = None
 display_log = False
 all_messages = {}
 channel_list = []

@@ -1,6 +1,6 @@
 import logging
 import meshtastic.serial_interface, meshtastic.tcp_interface, meshtastic.ble_interface
-import globals
+import contact.globals as globals
 
 def initialize_interface(args):
     try:

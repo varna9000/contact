@@ -1,7 +1,7 @@
-import globals
+import contact.globals as globals
 import datetime
 from meshtastic.protobuf import config_pb2
-import default_config as config
+import contact.ui.default_config as config
 
 def get_channels():
     """Retrieve channels from the node and update globals.channel_list and globals.all_messages."""
@@ -48,6 +48,7 @@ def get_node_list():
             else:
                 return node
         sorted_nodes = sorted(globals.interface.nodes.values(), key = node_sort)
+        sorted_nodes = sorted(sorted_nodes, key = lambda node: node['isFavorite'] if 'isFavorite' in node else False, reverse = True)
         node_list = [node['num'] for node in sorted_nodes if node['num'] != my_node_num]
         return [my_node_num] + node_list  # Ensuring your node is always first
     return []
