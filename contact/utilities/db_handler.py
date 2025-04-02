@@ -3,9 +3,9 @@ import time
 import logging
 from datetime import datetime
 
-from utilities.utils import decimal_to_hex
-import ui.default_config as config
-import globals
+from contact.utilities.utils import decimal_to_hex
+import contact.ui.default_config as config
+import contact.globals as globals
 
 def get_table_name(channel):
     # Construct the table name

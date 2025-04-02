@@ -18,18 +18,18 @@ import logging
 import traceback
 import threading
 
-from utilities.db_handler import init_nodedb, load_messages_from_db
-from message_handlers.rx_handler import on_receive
-from settings import set_region
-from ui.curses_ui import main_ui
-from ui.colors import setup_colors
-from ui.splash import draw_splash
-import ui.default_config as config
-from utilities.arg_parser import setup_parser
-from utilities.interfaces import initialize_interface
-from utilities.input_handlers import get_list_input
-from utilities.utils import get_channels, get_node_list, get_nodeNum
-import globals
+from contact.utilities.db_handler import init_nodedb, load_messages_from_db
+from contact.message_handlers.rx_handler import on_receive
+from contact.settings import set_region
+from contact.ui.curses_ui import main_ui
+from contact.ui.colors import setup_colors
+from contact.ui.splash import draw_splash
+import contact.ui.default_config as config
+from contact.utilities.arg_parser import setup_parser
+from contact.utilities.interfaces import initialize_interface
+from contact.utilities.input_handlers import get_list_input
+from contact.utilities.utils import get_channels, get_node_list, get_nodeNum
+import contact.globals as globals
 
 # Set ncurses compatibility settings
 os.environ["NCURSES_NO_UTF8_ACS"] = "1"
@@ -87,7 +87,7 @@ def main(stdscr):
         logging.error("Console output before crash:\n%s", console_output)
         raise  # Re-raise only unexpected errors
 
-if __name__ == "__main__":
+def start():
     log_file = config.log_file_path
     log_f = open(log_file, "a", buffering=1)  # Enable line-buffering for immediate log writes
 
@@ -104,3 +104,6 @@ if __name__ == "__main__":
             logging.error("Fatal error in curses wrapper: %s", e)
             logging.error("Traceback: %s", traceback.format_exc())
             sys.exit(1)  # Exit with an error code
+
+if __name__ == "__main__":
+    start()
