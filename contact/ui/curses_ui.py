@@ -300,6 +300,14 @@ def main_ui(stdscr):
                 confirmation = get_list_input(f"Remove {get_name_from_database(globals.node_list[globals.selected_node])} from nodedb?", "no", ["yes", "no"])
                 if confirmation == "yes":
                     globals.interface.localNode.removeNode(globals.node_list[globals.selected_node])
+
+                    # Directly modifying the interface from client code - good? Bad? If it's stupid but it works, it's not supid?
+                    del(globals.interface.nodesByNum[globals.node_list[globals.selected_node]])
+
+                    # Convert to "!hex" representation that interface.nodes uses
+                    hexid = f"!{hex(globals.node_list[globals.selected_node])[2:]}"
+                    del(globals.interface.nodes[hexid])
+
                     globals.node_list.pop(globals.selected_node)
 
                     draw_messages_window()
