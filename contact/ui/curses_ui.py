@@ -1,5 +1,6 @@
 import curses
 import textwrap
+import time
 import logging
 import traceback
 from contact.utilities.utils import get_channels, get_readable_duration, get_time_ago, refresh_node_list
@@ -293,6 +294,28 @@ def main_ui(stdscr):
                     select_channel(globals.selected_channel)
                     draw_channel_list()
                     draw_messages_window()
+
+            if(globals.current_window == 2):
+                curses.curs_set(0)
+                confirmation = get_list_input(f"Remove {get_name_from_database(globals.node_list[globals.selected_node])} from nodedb?", "no", ["yes", "no"])
+                if confirmation == "yes":
+                    globals.interface.localNode.removeNode(globals.node_list[globals.selected_node])
+
+                    # Directly modifying the interface from client code - good? Bad? If it's stupid but it works, it's not supid?
+                    del(globals.interface.nodesByNum[globals.node_list[globals.selected_node]])
+
+                    # Convert to "!hex" representation that interface.nodes uses
+                    hexid = f"!{hex(globals.node_list[globals.selected_node])[2:]}"
+                    del(globals.interface.nodes[hexid])
+
+                    globals.node_list.pop(globals.selected_node)
+
+                    draw_messages_window()
+                    draw_node_list()
+                else:
+                    draw_messages_window()
+                curses.curs_set(1)
+                continue
 
         # ^/
         elif char == chr(31):
