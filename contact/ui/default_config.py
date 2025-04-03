@@ -65,7 +65,9 @@ def initialize_config():
         "settings_save": ["green", "black"],
         "settings_breadcrumbs": ["white", "black"],
         "settings_warning": ["red", "black"],
-        "settings_note": ["green", "black"]
+        "settings_note": ["green", "black"],
+        "node_favorite": ["green", "black"],
+        "node_ignored": ["red", "black"]
     }
     COLOR_CONFIG_LIGHT = {
         "default": ["black", "white"],
@@ -89,7 +91,9 @@ def initialize_config():
         "settings_save": ["green", "white"],
         "settings_breadcrumbs": ["black", "white"],
         "settings_warning": ["red", "white"],
-        "settings_note": ["green", "white"]
+        "settings_note": ["green", "white"],
+        "node_favorite": ["green", "white"],
+        "node_ignored": ["red", "white"]
     }
     COLOR_CONFIG_GREEN = {
         "default": ["green", "black"],
@@ -115,7 +119,9 @@ def initialize_config():
         "settings_save": ["green", "black"],
         "settings_breadcrumbs": ["green", "black"],
         "settings_warning": ["green", "black"],
-        "settings_note": ["green", "black"]
+        "settings_note": ["green", "black"],
+        "node_favorite": ["cyan", "white"],
+        "node_ignored": ["red", "white"]
     }
     default_config_variables = {
         "db_file_path": db_file_path,

@@ -459,7 +459,12 @@ def draw_node_list():
         node = globals.interface.nodesByNum[node_num]
         secure = 'user' in node and 'publicKey' in node['user'] and node['user']['publicKey']
         node_str = f"{'🔐' if secure else '🔓'} {get_name_from_database(node_num, 'long')}".ljust(box_width - 2)[:box_width - 2]
-        nodes_pad.addstr(i, 1, node_str, get_color("node_list", reverse=globals.selected_node == i and globals.current_window == 2))
+        color = "node_list"
+        if 'isFavorite' in node and node['isFavorite']:
+            color = "node_favorite"
+        if 'isIgnored' in node and node['isIgnored']:
+            color = "node_ignored"
+        nodes_pad.addstr(i, 1, node_str, get_color(color, reverse=globals.selected_node == i and globals.current_window == 2))
 
     nodes_win.attrset(get_color("window_frame_selected") if globals.current_window == 2 else get_color("window_frame"))
     nodes_win.box()
@@ -720,8 +725,17 @@ def refresh_pad(window):
 
 def highlight_line(highlight, window, line):
     pad = nodes_pad
+
     color = get_color("node_list")
     select_len = nodes_win.getmaxyx()[1] - 2
+
+    if window == 2:
+        node_num = globals.node_list[line]
+        node = globals.interface.nodesByNum[node_num]
+        if 'isFavorite' in node and node['isFavorite']:
+            color = get_color("node_favorite")
+        if 'isIgnored' in node and node['isIgnored']:
+            color = get_color("node_ignored")
 
     if(window == 0):
         pad = channel_pad
