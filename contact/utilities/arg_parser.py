@@ -33,5 +33,14 @@ def setup_parser():
         default=None,
         const="any"
     )
+    parser.add_argument(
+        "--settings",
+        "--set",
+        "--control",
+        "-c",
+        help="Launch directly into the settings",
+        action="store_true"
+    )
+
 
     return parser
