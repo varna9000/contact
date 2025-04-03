@@ -3,7 +3,6 @@
 '''
 Contact - A Console UI for Meshtastic by http://github.com/pdxlocations
 Powered by Meshtastic.org
-V 1.2.2
 
 Meshtastic® is a registered trademark of Meshtastic LLC. Meshtastic software components are released under various licenses, see GitHub for details. No warranty is provided - use at your own risk.
 '''
@@ -15,6 +14,7 @@ from pubsub import pub
 import sys
 import io
 import logging
+import subprocess
 import traceback
 import threading
 
@@ -42,7 +42,7 @@ if os.environ.get("COLORTERM") == "gnome-terminal":
 # Run `tail -f client.log` in another terminal to view live
 logging.basicConfig(
     filename=config.log_file_path,
-    level=logging.INFO,  # DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    level=logging.DEBUG,  # DEBUG, INFO, WARNING, ERROR, CRITICAL)
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
@@ -57,6 +57,11 @@ def main(stdscr):
             draw_splash(stdscr)
             parser = setup_parser()
             args = parser.parse_args()
+
+            # Check if --settings was passed and run settings.py as a subprocess
+            if getattr(args, 'settings', False):
+                subprocess.run([sys.executable, "-m", "contact.settings"], check=True)
+                return
 
             logging.info("Initializing interface %s", args)
             with globals.lock:

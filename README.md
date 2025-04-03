@@ -48,6 +48,7 @@ Optional arguments to specify a device to connect to and how.
 - `--port`, `--serial`, `-s`: The port to connect to via serial, e.g. `/dev/ttyUSB0`.
 - `--host`, `--tcp`, `-t`: The hostname or IP address to connect to using TCP, will default to localhost if no host is passed.
 - `--ble`, `-b`: The BLE device MAC address or name to connect to.
+- `--settings`, `--set`, `--control`, `-c`: Launch directly into the settings.
 
 If no connection arguments are specified, the client will attempt a serial connection and then a TCP connection to localhost.
 
