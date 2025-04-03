@@ -297,8 +297,8 @@ def main_ui(stdscr):
 
             if(globals.current_window == 2):
                 curses.curs_set(0)
-                confirmation = get_list_input(f"Remove {get_name_from_database(globals.node_list[globals.selected_node])} from nodedb?", "no", ["yes", "no"])
-                if confirmation == "yes":
+                confirmation = get_list_input(f"Remove {get_name_from_database(globals.node_list[globals.selected_node])} from nodedb?", "No", ["Yes", "No"])
+                if confirmation == "Yes":
                     globals.interface.localNode.removeNode(globals.node_list[globals.selected_node])
 
                     # Directly modifying the interface from client code - good? Bad? If it's stupid but it works, it's not supid?
@@ -330,8 +330,8 @@ def main_ui(stdscr):
                 curses.curs_set(0)
 
                 if 'isFavorite' not in selectedNode or selectedNode['isFavorite'] == False:
-                    confirmation = get_list_input(f"Set {get_name_from_database(globals.node_list[globals.selected_node])} as Favorite?", "no", ["yes", "no"])
-                    if confirmation == "yes":
+                    confirmation = get_list_input(f"Set {get_name_from_database(globals.node_list[globals.selected_node])} as Favorite?", None, ["Yes", "No"])
+                    if confirmation == "Yes":
                         globals.interface.localNode.setFavorite(globals.node_list[globals.selected_node])
                         # Maybe we shouldn't be modifying the nodedb, but maybe it should update itself
                         globals.interface.nodesByNum[globals.node_list[globals.selected_node]]['isFavorite'] = True
@@ -339,8 +339,8 @@ def main_ui(stdscr):
                         refresh_node_list()
 
                 else:
-                    confirmation = get_list_input(f"Remove {get_name_from_database(globals.node_list[globals.selected_node])} from Favorites?", "no", ["yes", "no"])
-                    if confirmation == "yes":
+                    confirmation = get_list_input(f"Remove {get_name_from_database(globals.node_list[globals.selected_node])} from Favorites?", None, ["Yes", "No"])
+                    if confirmation == "Yes":
                         globals.interface.localNode.removeFavorite(globals.node_list[globals.selected_node])
                         # Maybe we shouldn't be modifying the nodedb, but maybe it should update itself
                         globals.interface.nodesByNum[globals.node_list[globals.selected_node]]['isFavorite'] = False
@@ -356,13 +356,13 @@ def main_ui(stdscr):
                 curses.curs_set(0)
 
                 if 'isIgnored' not in selectedNode or selectedNode['isIgnored'] == False:
-                    confirmation = get_list_input(f"Set {get_name_from_database(globals.node_list[globals.selected_node])} as Ignored?", "no", ["yes", "no"])
-                    if confirmation == "yes":
+                    confirmation = get_list_input(f"Set {get_name_from_database(globals.node_list[globals.selected_node])} as Ignored?", "No", ["Yes", "No"])
+                    if confirmation == "Yes":
                         globals.interface.localNode.setIgnored(globals.node_list[globals.selected_node])
                         globals.interface.nodesByNum[globals.node_list[globals.selected_node]]['isIgnored'] = True
                 else:
-                    confirmation = get_list_input(f"Remove {get_name_from_database(globals.node_list[globals.selected_node])} from Ignored?", "no", ["yes", "no"])
-                    if confirmation == "yes":
+                    confirmation = get_list_input(f"Remove {get_name_from_database(globals.node_list[globals.selected_node])} from Ignored?", "No", ["Yes", "No"])
+                    if confirmation == "Yes":
                         globals.interface.localNode.removeIgnored(globals.node_list[globals.selected_node])
                         globals.interface.nodesByNum[globals.node_list[globals.selected_node]]['isIgnored'] = False
 
