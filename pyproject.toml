@@ -3,13 +3,7 @@ name = "contact"
 version = "1.3.2"
 description = "This Python curses client for Meshtastic is a terminal-based client designed to manage device settings, enable mesh chat communication, and handle configuration backups and restores."
 authors = [
-    {name = "Ben Lipsey",email = "ben@pdxlocations.com"},
-    {name = "Russell Schmidt"},
-    {name = "noon92"},
-    {name = "vidplace7"},
-    {name = "SpudGunMan"},
-    {name = "Ian McEwen"},
-    {name = "Nick Maloney"}
+    {name = "Ben Lipsey",email = "ben@pdxlocations.com"}
 ]
 license = "GPL-3.0-only"
 readme = "README.md"
