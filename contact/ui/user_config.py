@@ -167,20 +167,20 @@ def display_menu(state):
     return menu_win, menu_pad, options
 
 
-def move_highlight(old_idx, new_idx, options, menu_win, menu_pad, state):
-    if old_idx == new_idx:  # No-op
+def move_highlight(old_idx, options, menu_win, menu_pad, state):
+    if old_idx == state.selected_index:  # No-op
         return
 
     max_index = len(options) + (1 if state.show_save_option else 0) - 1
     visible_height = menu_win.getmaxyx()[0] - 5 - (2 if state.show_save_option else 0)
 
     # Adjust state.start_index only when moving out of visible range
-    if new_idx == max_index and state.show_save_option:
+    if state.selected_index == max_index and state.show_save_option:
         pass
-    elif new_idx < state.start_index[-1]:  # Moving above the visible area
-        state.start_index[-1] = new_idx
-    elif new_idx >= state.start_index[-1] + visible_height:  # Moving below the visible area
-        state.start_index[-1] = new_idx - visible_height
+    elif state.selected_index < state.start_index[-1]:  # Moving above the visible area
+        state.start_index[-1] = state.selected_index
+    elif state.selected_index >= state.start_index[-1] + visible_height:  # Moving below the visible area
+        state.start_index[-1] = state.selected_index - visible_height
     pass
 
     # Ensure state.start_index is within bounds
@@ -193,10 +193,10 @@ def move_highlight(old_idx, new_idx, options, menu_win, menu_pad, state):
         menu_pad.chgat(old_idx, 0, menu_pad.getmaxyx()[1], get_color("settings_sensitive") if options[old_idx] in sensitive_settings else get_color("settings_default"))
 
     # Highlight new selection
-    if state.show_save_option and new_idx == max_index:
+    if state.show_save_option and state.selected_index == max_index:
         menu_win.chgat(menu_win.getmaxyx()[0] - 2, (width - len(save_option)) // 2, len(save_option), get_color("settings_save", reverse=True))
     else:
-        menu_pad.chgat(new_idx, 0, menu_pad.getmaxyx()[1], get_color("settings_sensitive", reverse=True) if options[new_idx] in sensitive_settings else get_color("settings_default", reverse=True))
+        menu_pad.chgat(state.selected_index, 0, menu_pad.getmaxyx()[1], get_color("settings_sensitive", reverse=True) if options[state.selected_index] in sensitive_settings else get_color("settings_default", reverse=True))
 
     menu_win.refresh()
     
@@ -264,18 +264,18 @@ def json_editor(stdscr, state):
 
             old_selected_index = state.selected_index
             state.selected_index = max_index if state.selected_index == 0 else state.selected_index - 1
-            move_highlight(old_selected_index, state.selected_index, options, state.show_save_option, menu_win, menu_pad,state)
+            move_highlight(old_selected_index, options, menu_win, menu_pad, state)
 
         elif key == curses.KEY_DOWN:
 
             old_selected_index = state.selected_index
             state.selected_index = 0 if state.selected_index == max_index else state.selected_index + 1
-            move_highlight(old_selected_index, state.selected_index, options, menu_win, menu_pad, state)
+            move_highlight(old_selected_index, options, menu_win, menu_pad, state)
 
         elif key == ord("\t") and state.show_save_option:
             old_selected_index = state.selected_index
             state.selected_index = max_index
-            move_highlight(old_selected_index, state.selected_index, options, menu_win, menu_pad, state)
+            move_highlight(old_selected_index, options, menu_win, menu_pad, state)
 
         elif key in (curses.KEY_RIGHT, 10, 13):  # 10 = \n, 13 = carriage return
 
