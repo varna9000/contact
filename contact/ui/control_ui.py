@@ -99,7 +99,7 @@ def display_menu(state):
         state.start_index[-1], 0,
         menu_win.getbegyx()[0] + 3, menu_win.getbegyx()[1] + 4,
         menu_win.getbegyx()[0] + 3 + menu_win.getmaxyx()[0] - 5 - (2 if state.show_save_option else 0),
-        menu_win.getbegyx()[1] + menu_win.getmaxyx()[1] - 8
+        menu_win.getbegyx()[1] + menu_win.getmaxyx()[1] - 4
     )
 
     max_index = num_items + (1 if state.show_save_option else 0) - 1

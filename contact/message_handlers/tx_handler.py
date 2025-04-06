@@ -12,7 +12,7 @@ ack_naks = {}
 # Note "onAckNak" has special meaning to the API, thus the nonstandard naming convention
 # See https://github.com/meshtastic/python/blob/master/meshtastic/mesh_interface.py#L462
 def onAckNak(packet):
-    from contact.ui.curses_ui import draw_messages_window
+    from contact.ui.contact_ui import draw_messages_window
     request = packet['decoded']['requestId']
     if(request not in ack_naks):
         return
@@ -43,7 +43,7 @@ def onAckNak(packet):
 
 def on_response_traceroute(packet):
     """on response for trace route"""
-    from contact.ui.curses_ui import draw_channel_list, draw_messages_window, add_notification
+    from contact.ui.contact_ui import draw_channel_list, draw_messages_window, add_notification
 
     refresh_channels = False
     refresh_messages = False

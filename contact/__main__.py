@@ -21,7 +21,7 @@ import threading
 from contact.utilities.db_handler import init_nodedb, load_messages_from_db
 from contact.message_handlers.rx_handler import on_receive
 from contact.settings import set_region
-from contact.ui.curses_ui import main_ui
+from contact.ui.contact_ui import main_ui
 from contact.ui.colors import setup_colors
 from contact.ui.splash import draw_splash
 import contact.ui.default_config as config
