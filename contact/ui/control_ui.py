@@ -565,8 +565,11 @@ def settings_menu(stdscr, interface):
                     state.start_index.pop()
 
                 elif field.type == 8:  # Handle boolean type
-                    new_value = get_list_input(human_readable_name, str(current_value),  ["True", "False"])
-                    new_value = new_value == "True" or new_value is True
+                    new_value = get_list_input(human_readable_name, str(current_value), ["True", "False"])
+                    if new_value == "Not Set":
+                        pass  # Leave it as-is
+                    else:
+                        new_value = new_value == "True" or new_value is True
                     state.start_index.pop()
 
                 elif field.label == field.LABEL_REPEATED:  # Handle repeated field - Not currently used
