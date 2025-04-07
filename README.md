@@ -9,7 +9,7 @@ This Python curses client for Meshtastic is a terminal-based client designed to 
 <img width="846" alt="Contact - Main UI Screenshot" src="https://github.com/user-attachments/assets/d2996bfb-2c6d-46a8-b820-92a9143375f4">
 
 <br><br>
-The settings dialogue can be accessed within the client or may be run standalone to configure your node by launching `contact --settings` or 'contact -c`
+The settings dialogue can be accessed within the client or may be run standalone to configure your node by launching `contact --settings` or `contact -c`
 
 <img width="441" alt="Contact - Settings Dialogue" src="https://github.com/user-attachments/assets/dd47f52a-d4d8-4e40-8001-9ea53d87f816" />
 
