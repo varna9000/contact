@@ -16,7 +16,7 @@ def initialize_interface(args):
             except Exception as ex:
                 logging.error(f"Unexpected error initializing interface: {ex}")
             if globals.interface.devPath is None:
-                return meshtastic.tcp_interface.TCPInterface("meshtastic.local")
+                return meshtastic.tcp_interface.TCPInterface("localhost")
     
     except Exception as ex:
         logging.critical(f"Fatal error initializing interface: {ex}")
