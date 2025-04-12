@@ -1,7 +1,7 @@
-import argparse
+from argparse import ArgumentParser
 
-def setup_parser():
-    parser = argparse.ArgumentParser(
+def setup_parser() -> ArgumentParser:
+    parser = ArgumentParser(
             add_help=True,
             epilog="If no connection arguments are specified, we attempt a serial connection and then a TCP connection to localhost.")
 

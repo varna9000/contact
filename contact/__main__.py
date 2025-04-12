@@ -48,7 +48,7 @@ logging.basicConfig(
 
 globals.lock = threading.Lock()
 
-def main(stdscr):
+def main(stdscr: curses.window) -> None:
     output_capture = io.StringIO()
     try:
         with contextlib.redirect_stdout(output_capture), contextlib.redirect_stderr(output_capture):
@@ -92,7 +92,7 @@ def main(stdscr):
         logging.error("Console output before crash:\n%s", console_output)
         raise  # Re-raise only unexpected errors
 
-def start():
+def start() -> None:
     log_file = config.log_file_path
     log_f = open(log_file, "a", buffering=1)  # Enable line-buffering for immediate log writes
 

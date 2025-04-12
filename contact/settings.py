@@ -14,7 +14,7 @@ from contact.utilities.arg_parser import setup_parser
 from contact.utilities.interfaces import initialize_interface
 
 
-def main(stdscr):
+def main(stdscr: curses.window) -> None:
     output_capture = io.StringIO()
     try:
         with contextlib.redirect_stdout(output_capture), contextlib.redirect_stderr(output_capture):   
