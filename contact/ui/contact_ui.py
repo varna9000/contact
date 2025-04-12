@@ -13,7 +13,7 @@ import contact.ui.default_config as config
 import contact.ui.dialog
 import contact.globals as globals
 
-def handle_resize(stdscr, firstrun):
+def handle_resize(stdscr: curses.window, firstrun: bool) -> None:
     global messages_pad, messages_win, nodes_pad, nodes_win, channel_pad, channel_win, function_win, packetlog_win, entry_win
 
     # Calculate window max dimensions
@@ -90,7 +90,7 @@ def handle_resize(stdscr, firstrun):
         pass
 
 
-def main_ui(stdscr):
+def main_ui(stdscr: curses.window) -> None:
     global input_text
     input_text = ""
     stdscr.keypad(True)
@@ -377,7 +377,7 @@ def main_ui(stdscr):
 
 
 
-def draw_channel_list():
+def draw_channel_list() -> None:
     channel_pad.erase()
     win_height, win_width = channel_win.getmaxyx()
     start_index = max(0, globals.selected_channel - (win_height - 3))  # Leave room for borders
@@ -418,7 +418,7 @@ def draw_channel_list():
 
     refresh_pad(0)
 
-def draw_messages_window(scroll_to_bottom = False):
+def draw_messages_window(scroll_to_bottom: bool = False) -> None:
     """Update the messages window based on the selected channel and scroll position."""
     messages_pad.erase()
 
@@ -461,7 +461,7 @@ def draw_messages_window(scroll_to_bottom = False):
 
     draw_packetlog_win()
 
-def draw_node_list():
+def draw_node_list() -> None:
     global nodes_pad
 
     # This didn't work, for some reason an error is thown on startup, so we just create the pad every time
@@ -501,7 +501,7 @@ def draw_node_list():
     curses.curs_set(1)
     entry_win.refresh()
 
-def select_channel(idx):
+def select_channel(idx: int) -> None:
     old_selected_channel = globals.selected_channel
     globals.selected_channel = max(0, min(idx, len(globals.channel_list) - 1))
     draw_messages_window(True)
@@ -515,7 +515,7 @@ def select_channel(idx):
     highlight_line(True, 0, globals.selected_channel)
     refresh_pad(0)
 
-def scroll_channels(direction):
+def scroll_channels(direction: int) -> None:
     new_selected_channel = globals.selected_channel + direction
 
     if new_selected_channel < 0:
@@ -525,7 +525,7 @@ def scroll_channels(direction):
 
     select_channel(new_selected_channel)
 
-def scroll_messages(direction):
+def scroll_messages(direction: int) -> None:
     globals.selected_message += direction
 
     msg_line_count = messages_pad.getmaxyx()[0]
@@ -533,7 +533,7 @@ def scroll_messages(direction):
 
     refresh_pad(1)
 
-def select_node(idx):
+def select_node(idx: int) -> None:
     old_selected_node = globals.selected_node
     globals.selected_node = max(0, min(idx, len(globals.node_list) - 1))
 
@@ -543,7 +543,7 @@ def select_node(idx):
 
     draw_function_win()
 
-def scroll_nodes(direction):
+def scroll_nodes(direction: int) -> None:
     new_selected_node = globals.selected_node + direction
 
     if new_selected_node < 0:
@@ -553,7 +553,7 @@ def scroll_nodes(direction):
 
     select_node(new_selected_node)
 
-def draw_packetlog_win():
+def draw_packetlog_win() -> None:
 
     columns = [10,10,15,30]
     span = 0
@@ -602,7 +602,7 @@ def draw_packetlog_win():
     curses.curs_set(1)
     entry_win.refresh()
 
-def search(win):
+def search(win: int) -> None:
     start_idx = globals.selected_node
     select_func = select_node
 
@@ -645,7 +645,7 @@ def search(win):
 
     entry_win.erase()
 
-def draw_node_details():
+def draw_node_details() -> None:
     node = None
     try:
         node = globals.interface.nodesByNum[globals.node_list[globals.selected_node]]
@@ -693,7 +693,7 @@ def draw_node_details():
 
     draw_centered_text_field(function_win, nodestr, 0, get_color("commands"))
 
-def draw_help():
+def draw_help() -> None:
     cmds = ["↑→↓← = Select", "    ENTER = Send", "    ` = Settings", "    ^P = Packet Log", "    ESC = Quit", "    ^t = Traceroute", "    ^d = Archive Chat", "    ^f = Favorite", "    ^g = Ignore"]
     function_str = ""
     for s in cmds:
@@ -702,19 +702,18 @@ def draw_help():
 
     draw_centered_text_field(function_win, function_str, 0, get_color("commands"))
 
-def draw_function_win():
+def draw_function_win() -> None:
     if(globals.current_window == 2):
         draw_node_details()
     else:
         draw_help()
 
-def get_msg_window_lines():
+def get_msg_window_lines() -> None:
     packetlog_height = packetlog_win.getmaxyx()[0] - 1 if globals.display_log else 0
     return messages_win.getmaxyx()[0] - 2 - packetlog_height
 
-def refresh_pad(window):
-    # global messages_pad, nodes_pad, channel_pad 
-    
+def refresh_pad(window: int) -> None:
+
     win_height = channel_win.getmaxyx()[0]
 
     if(window == 1):
@@ -746,7 +745,7 @@ def refresh_pad(window):
                         box.getbegyx()[0] + 1, box.getbegyx()[1] + 1,
                         box.getbegyx()[0] + lines, box.getbegyx()[1] + box.getmaxyx()[1] - 2)
 
-def highlight_line(highlight, window, line):
+def highlight_line(highlight: bool, window: int, line: int) -> None:
     pad = nodes_pad
 
     color = get_color("node_list")
@@ -767,25 +766,25 @@ def highlight_line(highlight, window, line):
 
     pad.chgat(line, 1, select_len, color | curses.A_REVERSE if highlight else color)
 
-def add_notification(channel_number):
+def add_notification(channel_number: int) -> None:
     if channel_number not in globals.notifications:
         globals.notifications.append(channel_number)
 
-def remove_notification(channel_number):
+def remove_notification(channel_number: int) -> None:
     if channel_number in globals.notifications:
         globals.notifications.remove(channel_number)
 
-def draw_text_field(win, text, color):
+def draw_text_field(win: curses.window, text: str, color: int) -> None:
     win.border()
     win.addstr(1, 1, text, color)
 
-def draw_centered_text_field(win, text, y_offset, color):
+def draw_centered_text_field(win: curses.window, text: str, y_offset: int, color: int) -> None:
     height, width = win.getmaxyx()
     x = (width - len(text)) // 2
     y = (height // 2) + y_offset
     win.addstr(y, x, text, color)
     win.refresh()
 
-def draw_debug(value):
+def draw_debug(value: str | int) -> None:
     function_win.addstr(1, 1, f"debug: {value}    ")
     function_win.refresh()

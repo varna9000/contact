@@ -39,7 +39,7 @@ config_folder = os.path.join(locals_dir, "node-configs")
 field_mapping, help_text = parse_ini_file(translation_file)
 
 
-def display_menu(state):
+def display_menu(state: MenuState) -> tuple[object, object]:  # curses.window or pad types
 
     min_help_window_height = 6
     num_items = len(state.current_menu) + (1 if state.show_save_option else 0)
@@ -110,7 +110,15 @@ def display_menu(state):
     return menu_win, menu_pad
 
 
-def draw_help_window(menu_start_y, menu_start_x, menu_height, max_help_lines, transformed_path, state):
+def draw_help_window(
+    menu_start_y: int,
+    menu_start_x: int,
+    menu_height: int,
+    max_help_lines: int,
+    transformed_path: list[str],
+    state: MenuState
+) -> None:
+
     global help_win
 
     if 'help_win' not in globals():
@@ -121,7 +129,17 @@ def draw_help_window(menu_start_y, menu_start_x, menu_height, max_help_lines, tr
 
     help_win = update_help_window(help_win, help_text, transformed_path, selected_option, max_help_lines, width, help_y, menu_start_x)
 
-def update_help_window(help_win, help_text, transformed_path, selected_option, max_help_lines, width, help_y, help_x):
+def update_help_window(
+    help_win: object,  # curses window or None
+    help_text: dict[str, str],
+    transformed_path: list[str],
+    selected_option: str | None,
+    max_help_lines: int,
+    width: int,
+    help_y: int,
+    help_x: int
+) -> object:  # returns a curses window
+
     """Handles rendering the help window consistently."""
     wrapped_help = get_wrapped_help_text(help_text, transformed_path, selected_option, width, max_help_lines)
 
@@ -159,7 +177,13 @@ def update_help_window(help_win, help_text, transformed_path, selected_option, m
     return help_win
 
 
-def get_wrapped_help_text(help_text, transformed_path, selected_option, width, max_lines):
+def get_wrapped_help_text(
+    help_text: dict[str, str],
+    transformed_path: list[str],
+    selected_option: str | None,
+    width: int,
+    max_lines: int
+):
     """Fetches and formats help text for display, ensuring it fits within the allowed lines."""
     
     full_help_key = '.'.join(transformed_path + [selected_option]) if selected_option else None
