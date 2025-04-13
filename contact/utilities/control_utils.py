@@ -1,10 +1,11 @@
 import re
 
+def parse_ini_file(ini_file_path: str) -> tuple[dict[str, str], dict[str, str]]:
+    """Parses an INI file and returns a mapping of keys to human-readable names and help text."""
 
-def parse_ini_file(ini_file_path):
-    field_mapping = {}
-    help_text = {}
-    current_section = None
+    field_mapping: dict[str, str] = {}
+    help_text: dict[str, str] = {}
+    current_section: str | None = None
 
     with open(ini_file_path, 'r', encoding='utf-8') as f:
         for line in f:
@@ -46,14 +47,14 @@ def parse_ini_file(ini_file_path):
 
     return field_mapping, help_text
 
-def transform_menu_path(menu_path):
+def transform_menu_path(menu_path: list[str]) -> list[str]:
     """Applies path replacements and normalizes entries in the menu path."""
     path_replacements = {
         "Radio Settings": "config",
         "Module Settings": "module"
     }
 
-    transformed_path = []
+    transformed_path: list[str] = []
     for part in menu_path[1:]:  # Skip 'Main Menu'
         # Apply fixed replacements
         part = path_replacements.get(part, part)

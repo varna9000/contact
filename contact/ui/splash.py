@@ -1,7 +1,8 @@
 import curses
 from contact.ui.colors import get_color
 
-def draw_splash(stdscr):
+def draw_splash(stdscr: object) -> None:
+    """Draw the splash screen with a logo and connecting message."""
     curses.curs_set(0)
 
     stdscr.clear()

@@ -1,17 +1,34 @@
 import logging
 import time
-from contact.utilities.utils import refresh_node_list
 from datetime import datetime
-from contact.ui.contact_ui import draw_packetlog_win, draw_node_list, draw_messages_window, draw_channel_list, add_notification
-from contact.utilities.db_handler import save_message_to_db, maybe_store_nodeinfo_in_db, get_name_from_database, update_node_info_in_db
+from typing import Any
+
+from contact.utilities.utils import refresh_node_list
+from contact.ui.contact_ui import (
+    draw_packetlog_win,
+    draw_node_list,
+    draw_messages_window,
+    draw_channel_list,
+    add_notification,
+)
+from contact.utilities.db_handler import (
+    save_message_to_db,
+    maybe_store_nodeinfo_in_db,
+    get_name_from_database,
+    update_node_info_in_db,
+)
 import contact.ui.default_config as config
 import contact.globals as globals
 
 
-from datetime import datetime
+def on_receive(packet: dict[str, Any], interface: Any) -> None:
+    """
+    Handles an incoming packet from a Meshtastic interface.
 
-def on_receive(packet, interface):
-
+    Args:
+        packet: The received Meshtastic packet as a dictionary.
+        interface: The Meshtastic interface instance that received the packet.
+    """
     with globals.lock:
         # Update packet log
         globals.packet_buffer.append(packet)

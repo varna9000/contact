@@ -1,17 +1,29 @@
 from datetime import datetime
+from typing import Any
+
 import google.protobuf.json_format
 from meshtastic import BROADCAST_NUM
 from meshtastic.protobuf import mesh_pb2, portnums_pb2
 
-from contact.utilities.db_handler import save_message_to_db, update_ack_nak, get_name_from_database, is_chat_archived, update_node_info_in_db
+from contact.utilities.db_handler import (
+    save_message_to_db,
+    update_ack_nak,
+    get_name_from_database,
+    is_chat_archived,
+    update_node_info_in_db,
+)
 import contact.ui.default_config as config
 import contact.globals as globals
 
-ack_naks = {}
+ack_naks: dict[str, dict[str, Any]] = {}  # requestId -> {channel, messageIndex, timestamp}
+
 
 # Note "onAckNak" has special meaning to the API, thus the nonstandard naming convention
 # See https://github.com/meshtastic/python/blob/master/meshtastic/mesh_interface.py#L462
-def onAckNak(packet):
+def onAckNak(packet: dict[str, Any]) -> None:
+    """
+    Handles incoming ACK/NAK response packets.
+    """
     from contact.ui.contact_ui import draw_messages_window
     request = packet['decoded']['requestId']
     if(request not in ack_naks):
@@ -41,8 +53,10 @@ def onAckNak(packet):
     if globals.channel_list[channel_number] == globals.channel_list[globals.selected_channel]:
         draw_messages_window()
 
-def on_response_traceroute(packet):
-    """on response for trace route"""
+def on_response_traceroute(packet: dict[str, Any]) -> None:
+    """
+    Handle traceroute response packets and render the route visually in the UI.
+    """
     from contact.ui.contact_ui import draw_channel_list, draw_messages_window, add_notification
 
     refresh_channels = False
@@ -118,7 +132,10 @@ def on_response_traceroute(packet):
     save_message_to_db(globals.channel_list[channel_number], packet['from'], msg_str)
 
 
-def send_message(message, destination=BROADCAST_NUM, channel=0):
+def send_message(message: str, destination: int = BROADCAST_NUM, channel: int = 0) -> None:
+    """
+    Sends a chat message using the selected channel.
+    """
     myid = globals.myNodeNum
     send_on_channel = 0
     channel_id = globals.channel_list[channel]
@@ -168,7 +185,10 @@ def send_message(message, destination=BROADCAST_NUM, channel=0):
 
     ack_naks[sent_message_data.id] = {'channel': channel_id, 'messageIndex': len(globals.all_messages[channel_id]) - 1, 'timestamp': timestamp}
 
-def send_traceroute():
+def send_traceroute() -> None:
+    """
+    Sends a RouteDiscovery protobuf to the selected node.
+    """
     r = mesh_pb2.RouteDiscovery()
     globals.interface.sendData(
         r,

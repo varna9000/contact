@@ -3,9 +3,10 @@ import binascii
 import curses
 import ipaddress
 import re
+from typing import Any, Optional
 from contact.ui.colors import get_color
 
-def wrap_text(text, wrap_width):
+def wrap_text(text: str, wrap_width: int) -> list[str]:
     """Wraps text while preserving spaces and breaking long words."""
     words = re.findall(r'\S+|\s+', text)  # Capture words and spaces separately
     wrapped_lines = []
@@ -40,7 +41,7 @@ def wrap_text(text, wrap_width):
     return wrapped_lines
     
 
-def get_text_input(prompt):
+def get_text_input(prompt: str) -> Optional[str]:
     """Handles user input with wrapped text for long prompts."""
     height = 8
     width = 80
@@ -128,7 +129,7 @@ def get_text_input(prompt):
     return user_input
 
 
-def get_admin_key_input(current_value):
+def get_admin_key_input(current_value: list[bytes]) -> Optional[list[str]]:
     def to_base64(byte_strings):
         """Convert byte values to Base64-encoded strings."""
         return [base64.b64encode(b).decode() for b in byte_strings]
@@ -212,7 +213,7 @@ def get_admin_key_input(current_value):
 
 
 
-def get_repeated_input(current_value):
+def get_repeated_input(current_value: list[str]) -> Optional[str]:
     height = 9
     width = 80
     start_y = (curses.LINES - height) // 2
@@ -279,7 +280,7 @@ def get_repeated_input(current_value):
                 pass  # Ignore invalid character inputs
 
 
-def get_fixed32_input(current_value):
+def get_fixed32_input(current_value: int) -> int:
     cvalue = current_value
     current_value = str(ipaddress.IPv4Address(current_value))
     height = 10
@@ -336,7 +337,7 @@ def get_fixed32_input(current_value):
                 pass  # Ignore invalid inputs
 
 
-def get_list_input(prompt, current_option, list_options):
+def get_list_input(prompt: str, current_option: Optional[str], list_options: list[str]) -> Optional[str]:
     """
     Displays a scrollable list of list_options for the user to choose from.
     """
@@ -399,7 +400,13 @@ def get_list_input(prompt, current_option, list_options):
             return current_option
 
 
-def move_highlight(old_idx, new_idx, options, list_win, list_pad):
+def move_highlight(
+    old_idx: int,
+    new_idx: int,
+    options: list[str],
+    list_win: curses.window,
+    list_pad: curses.window
+) -> int:
 
     global scroll_offset
     if 'scroll_offset' not in globals():
@@ -439,7 +446,12 @@ def move_highlight(old_idx, new_idx, options, list_win, list_pad):
     return scroll_offset  # Return updated scroll_offset to be stored externally
 
 
-def draw_arrows(win, visible_height, max_index, start_index):
+def draw_arrows(
+    win: curses.window,
+    visible_height: int,
+    max_index: int,
+    start_index: int
+) -> None:
 
     if visible_height < max_index:
         if start_index > 0:

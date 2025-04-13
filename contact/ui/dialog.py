@@ -1,7 +1,7 @@
 import curses
 from contact.ui.colors import get_color
 
-def dialog(stdscr, title, message):
+def dialog(stdscr: curses.window, title: str, message: str) -> None:
     height, width = stdscr.getmaxyx()
 
     # Calculate dialog dimensions

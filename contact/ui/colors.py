@@ -12,7 +12,7 @@ COLOR_MAP = {
     "white": curses.COLOR_WHITE
 }
 
-def setup_colors(reinit=False):
+def setup_colors(reinit: bool = False) -> None:
     """
     Initialize curses color pairs based on the COLOR_CONFIG.
     """
@@ -29,7 +29,7 @@ def setup_colors(reinit=False):
     print()
 
 
-def get_color(category, bold=False, reverse=False, underline=False):
+def get_color(category: str, bold: bool = False, reverse: bool = False, underline: bool = False) -> int:
     """
     Retrieve a curses color pair with optional attributes.
     """

@@ -1,19 +1,27 @@
-from collections import OrderedDict
-from meshtastic.protobuf import config_pb2, module_config_pb2, channel_pb2
-import logging
 import base64
+import logging
 import os
+from collections import OrderedDict
+
+from typing import Any
+
+from google.protobuf.message import Message
+from meshtastic.protobuf import channel_pb2, config_pb2, module_config_pb2
+
 
 locals_dir = os.path.dirname(os.path.abspath(__file__))
 translation_file = os.path.join(locals_dir, "localisations", "en.ini")
 
-def encode_if_bytes(value):
+def encode_if_bytes(value: Any) -> str:
     """Encode byte values to base64 string."""
     if isinstance(value, bytes):
         return base64.b64encode(value).decode('utf-8')
     return value
 
-def extract_fields(message_instance, current_config=None):
+def extract_fields(
+    message_instance: Message,
+    current_config: Message | dict[str, Any] | None = None
+) -> dict[str, Any]:
     if isinstance(current_config, dict):  # Handle dictionaries
         return {key: (None, encode_if_bytes(current_config.get(key, "Not Set"))) for key in current_config}
     
@@ -47,7 +55,10 @@ def extract_fields(message_instance, current_config=None):
             menu[field.name] = (field, encode_if_bytes(current_value))
     return menu
 
-def generate_menu_from_protobuf(interface):
+def generate_menu_from_protobuf(interface: object) -> dict[str, Any]:
+    """
+    Builds the full settings menu structure from the protobuf definitions.
+    """
     menu_structure = {"Main Menu": {}}
 
     # Add User Settings
