@@ -1,7 +1,7 @@
 import curses
 from contact.ui.colors import get_color
 
-def draw_splash(stdscr):
+def draw_splash(stdscr: object) -> None:
     curses.curs_set(0)
 
     stdscr.clear()

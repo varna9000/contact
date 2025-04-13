@@ -1,6 +1,7 @@
 import os
 import json
 import curses
+from typing import Any
 from contact.ui.colors import get_color, setup_colors, COLOR_MAP
 from contact.ui.default_config import format_json_single_line_arrays, loaded_config
 from contact.utilities.input_handlers import get_list_input
@@ -9,8 +10,7 @@ width = 80
 save_option = "Save Changes"
 sensitive_settings = []
 
-def edit_color_pair(key, current_value):
-
+def edit_color_pair(key: str, current_value: list[str]) -> list[str]:
     """
     Allows the user to select a foreground and background color for a key.
     """
@@ -20,7 +20,7 @@ def edit_color_pair(key, current_value):
 
     return [fg_color, bg_color]
 
-def edit_value(key, current_value, state):
+def edit_value(key: str, current_value: str) -> str:
 
     height = 10
     input_width = width - 16  # Allow space for "New Value: "
@@ -96,7 +96,7 @@ def edit_value(key, current_value, state):
     return user_input if user_input else current_value
 
 
-def display_menu(state):
+def display_menu(state: Any) -> tuple[Any, Any, list[str]]:
     """
     Render the configuration menu with a Save button directly added to the window.
     """
@@ -167,7 +167,14 @@ def display_menu(state):
     return menu_win, menu_pad, options
 
 
-def move_highlight(old_idx, options, menu_win, menu_pad, state):
+def move_highlight(
+    old_idx: int,
+    options: list[str],
+    menu_win: curses.window,
+    menu_pad: curses.window,
+    state: Any
+) -> None:
+    
     if old_idx == state.selected_index:  # No-op
         return
 
@@ -209,7 +216,12 @@ def move_highlight(old_idx, options, menu_win, menu_pad, state):
     draw_arrows(menu_win, visible_height, max_index, state)
 
 
-def draw_arrows(win, visible_height, max_index, state):
+def draw_arrows(
+    win: curses.window,
+    visible_height: int,
+    max_index: int,
+    state: any
+) -> None:
 
     mi = max_index - (2 if state.show_save_option else 0) 
 
@@ -225,7 +237,7 @@ def draw_arrows(win, visible_height, max_index, state):
             win.addstr(visible_height + 3, 2, " ", get_color("settings_default"))
 
 
-def json_editor(stdscr, state):
+def json_editor(stdscr: curses.window, state: Any) -> None:
 
     state.selected_index = 0  # Track the selected option
 
@@ -351,13 +363,13 @@ def json_editor(stdscr, state):
                 break
 
 
-def save_json(file_path, data):
+def save_json(file_path: str, data: dict[str, Any]) -> None:
     formatted_json = format_json_single_line_arrays(data)
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(formatted_json)
     setup_colors(reinit=True)
 
-def main(stdscr):
+def main(stdscr: curses.window) -> None:
     from contact.ui.ui_state import MenuState
 
     state = MenuState()

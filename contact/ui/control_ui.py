@@ -38,6 +38,9 @@ config_folder = os.path.join(locals_dir, "node-configs")
 # Load translations
 field_mapping, help_text = parse_ini_file(translation_file)
 
+# Aliases
+Segment = tuple[str, str, bool, bool]
+WrappedLine = list[Segment]
 
 def display_menu(state: MenuState) -> tuple[object, object]:  # curses.window or pad types
 
@@ -183,7 +186,7 @@ def get_wrapped_help_text(
     selected_option: str | None,
     width: int,
     max_lines: int
-):
+) -> list[WrappedLine]:
     """Fetches and formats help text for display, ensuring it fits within the allowed lines."""
     
     full_help_key = '.'.join(transformed_path + [selected_option]) if selected_option else None
@@ -202,7 +205,7 @@ def get_wrapped_help_text(
         r'\\033\[4m(.*?)\\033\[0m': ('settings_default', False, True)  # Underline
     }
 
-    def extract_ansi_segments(text):
+    def extract_ansi_segments(text: str) -> list[Segment]:
         """Extracts and replaces ANSI color codes, ensuring spaces are preserved."""
         matches = []
         last_pos = 0
@@ -232,7 +235,7 @@ def get_wrapped_help_text(
 
         return matches
 
-    def wrap_ansi_text(segments, wrap_width):
+    def wrap_ansi_text(segments: list[Segment], wrap_width: int) -> list[WrappedLine]:
         """Wraps text while preserving ANSI formatting and spaces."""
         wrapped_lines = []
         line_buffer = []
@@ -275,7 +278,17 @@ def get_wrapped_help_text(
     return wrapped_help
 
 
-def move_highlight(old_idx, options, menu_win, menu_pad, help_win, help_text, max_help_lines, state):
+def move_highlight(
+    old_idx: int,
+    options: list[str],
+    menu_win: object,
+    menu_pad: object,
+    help_win: object,
+    help_text: dict[str, str],
+    max_help_lines: int,
+    state: MenuState
+) -> None:
+    
     if old_idx == state.selected_index:  # No-op
         return
 
@@ -323,7 +336,12 @@ def move_highlight(old_idx, options, menu_win, menu_pad, help_win, help_text, ma
     draw_arrows(menu_win, visible_height, max_index, state)
 
 
-def draw_arrows(win, visible_height, max_index, state):
+def draw_arrows(
+    win: object,
+    visible_height: int,
+    max_index: int,
+    state: MenuState
+) -> None:
 
     # vh = visible_height + (1 if show_save_option else 0)
     mi = max_index - (2 if state.show_save_option else 0) 
@@ -340,7 +358,7 @@ def draw_arrows(win, visible_height, max_index, state):
             win.addstr(visible_height + 3, 2, " ", get_color("settings_default"))
         
 
-def settings_menu(stdscr, interface):
+def settings_menu(stdscr: object, interface: object) -> None:
     curses.update_lines_cols()
 
     menu = generate_menu_from_protobuf(interface)
@@ -674,7 +692,7 @@ def settings_menu(stdscr, interface):
             menu_win.refresh()
             break
 
-def set_region(interface):
+def set_region(interface: object) -> None:
     node = interface.getNode('^local')
     device_config = node.localConfig
     lora_descriptor = device_config.lora.DESCRIPTOR
