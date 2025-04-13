@@ -1,6 +1,8 @@
 import re
 
 def parse_ini_file(ini_file_path: str) -> tuple[dict[str, str], dict[str, str]]:
+    """Parses an INI file and returns a mapping of keys to human-readable names and help text."""
+
     field_mapping: dict[str, str] = {}
     help_text: dict[str, str] = {}
     current_section: str | None = None
