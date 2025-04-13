@@ -12,7 +12,7 @@ from meshtastic.protobuf import channel_pb2, config_pb2, module_config_pb2
 locals_dir = os.path.dirname(os.path.abspath(__file__))
 translation_file = os.path.join(locals_dir, "localisations", "en.ini")
 
-def encode_if_bytes(value: Any) -> str | Any:
+def encode_if_bytes(value: Any) -> str:
     """Encode byte values to base64 string."""
     if isinstance(value, bytes):
         return base64.b64encode(value).decode('utf-8')
