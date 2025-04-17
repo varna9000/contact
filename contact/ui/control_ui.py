@@ -2,11 +2,11 @@ import base64
 import curses
 import logging
 import os
-import re
 import sys
 
 from contact.utilities.save_to_radio import save_changes
 from contact.utilities.config_io import config_export, config_import
+from contact.utilities.control_utils import parse_ini_file, transform_menu_path
 from contact.utilities.input_handlers import (
     get_repeated_input,
     get_text_input,
@@ -14,13 +14,12 @@ from contact.utilities.input_handlers import (
     get_list_input,
     get_admin_key_input,
 )
-from contact.ui.menus import generate_menu_from_protobuf
 from contact.ui.colors import get_color
 from contact.ui.dialog import dialog
-from contact.utilities.control_utils import parse_ini_file, transform_menu_path
+from contact.ui.menus import generate_menu_from_protobuf
+from contact.ui.nav_utils import move_highlight, draw_arrows, update_help_window
 from contact.ui.user_config import json_editor
 from contact.ui.ui_state import MenuState
-from contact.ui.nav_utils import move_highlight, draw_arrows, update_help_window
 
 menu_state = MenuState()
 

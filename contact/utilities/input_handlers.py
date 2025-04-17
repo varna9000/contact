@@ -2,8 +2,8 @@ import base64
 import binascii
 import curses
 import ipaddress
-import re
 from typing import Any, Optional
+
 from contact.ui.colors import get_color
 from contact.ui.nav_utils import move_highlight, draw_arrows, wrap_text
 

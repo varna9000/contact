@@ -1,12 +1,12 @@
 import curses
 import textwrap
-import time
 import logging
 import traceback
+
 from contact.utilities.utils import get_channels, get_readable_duration, get_time_ago, refresh_node_list
 from contact.settings import settings_menu
 from contact.message_handlers.tx_handler import send_message, send_traceroute
-from contact.ui.colors import setup_colors, get_color
+from contact.ui.colors import get_color
 from contact.utilities.db_handler import get_name_from_database, update_node_info_in_db, is_chat_archived
 from contact.utilities.input_handlers import get_list_input
 import contact.ui.default_config as config

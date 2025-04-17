@@ -2,16 +2,16 @@ import os
 import json
 import curses
 from typing import Any
+
 from contact.ui.colors import get_color, setup_colors, COLOR_MAP
 from contact.ui.default_config import format_json_single_line_arrays, loaded_config
-from contact.utilities.input_handlers import get_list_input
 from contact.ui.nav_utils import move_highlight, draw_arrows
+from contact.utilities.input_handlers import get_list_input
 
 
 width = 80
 max_help_lines = 6
 save_option = "Save Changes"
-sensitive_settings = []
 
 
 def edit_color_pair(key: str, current_value: list[str]) -> list[str]:
