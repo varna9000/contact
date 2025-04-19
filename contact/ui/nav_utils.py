@@ -121,7 +121,7 @@ def move_highlight(
             menu_win.getbegyx()[1],
         )
 
-    draw_arrows(menu_win, visible_height, max_index, start_index, show_save_option=False)
+    draw_arrows(menu_win, visible_height, max_index, start_index, show_save_option)
 
 
 def draw_arrows(
