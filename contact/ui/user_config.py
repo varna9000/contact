@@ -176,7 +176,7 @@ def display_menu(menu_state: Any) -> tuple[Any, Any, List[str]]:
     max_index = num_items + (1 if menu_state.show_save_option else 0) - 1
     visible_height = menu_win.getmaxyx()[0] - 5 - (2 if menu_state.show_save_option else 0)
 
-    draw_arrows(menu_win, visible_height, max_index, menu_state.start_index, show_save_option=False)
+    draw_arrows(menu_win, visible_height, max_index, menu_state.start_index, menu_state.show_save_option)
 
     return menu_win, menu_pad, options
 
