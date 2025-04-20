@@ -1,16 +1,17 @@
-import contact.globals as globals
 import datetime
 from meshtastic.protobuf import config_pb2
 import contact.ui.default_config as config
 
+from contact.utilities.singleton import ui_state, interface_state
+
 
 def get_channels():
-    """Retrieve channels from the node and update globals.channel_list and globals.all_messages."""
-    node = globals.interface.getNode("^local")
+    """Retrieve channels from the node and update ui_state.channel_list and ui_state.all_messages."""
+    node = interface_state.interface.getNode("^local")
     device_channels = node.channels
 
     # Clear and rebuild channel list
-    # globals.channel_list = []
+    # ui_state.channel_list = []
 
     for device_channel in device_channels:
         if device_channel.role:
@@ -26,20 +27,20 @@ def get_channels():
                 ].name
                 channel_name = convert_to_camel_case(modem_preset_string)
 
-            # Add channel to globals.channel_list if not already present
-            if channel_name not in globals.channel_list:
-                globals.channel_list.append(channel_name)
+            # Add channel to ui_state.channel_list if not already present
+            if channel_name not in ui_state.channel_list:
+                ui_state.channel_list.append(channel_name)
 
-            # Initialize globals.all_messages[channel_name] if it doesn't exist
-            if channel_name not in globals.all_messages:
-                globals.all_messages[channel_name] = []
+            # Initialize ui_state.all_messages[channel_name] if it doesn't exist
+            if channel_name not in ui_state.all_messages:
+                ui_state.all_messages[channel_name] = []
 
-    return globals.channel_list
+    return ui_state.channel_list
 
 
 def get_node_list():
-    if globals.interface.nodes:
-        my_node_num = globals.myNodeNum
+    if interface_state.interface.nodes:
+        my_node_num = interface_state.myNodeNum
 
         def node_sort(node):
             if config.node_sort == "lastHeard":
@@ -51,7 +52,7 @@ def get_node_list():
             else:
                 return node
 
-        sorted_nodes = sorted(globals.interface.nodes.values(), key=node_sort)
+        sorted_nodes = sorted(interface_state.interface.nodes.values(), key=node_sort)
 
         # Move favorite nodes to the beginning
         sorted_nodes = sorted(
@@ -68,14 +69,14 @@ def get_node_list():
 
 def refresh_node_list():
     new_node_list = get_node_list()
-    if new_node_list != globals.node_list:
-        globals.node_list = new_node_list
+    if new_node_list != ui_state.node_list:
+        ui_state.node_list = new_node_list
         return True
     return False
 
 
 def get_nodeNum():
-    myinfo = globals.interface.getMyNodeInfo()
+    myinfo = interface_state.interface.getMyNodeInfo()
     myNodeNum = myinfo["num"]
     return myNodeNum
 
