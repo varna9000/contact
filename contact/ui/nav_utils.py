@@ -3,6 +3,18 @@ import re
 from contact.ui.colors import get_color
 from contact.utilities.control_utils import transform_menu_path
 from typing import Any, Optional, List, Dict
+from contact.utilities.singleton import interface_state, ui_state
+
+
+def get_node_color(node_index: int, reverse: bool = False):
+    node_num = ui_state.node_list[node_index]
+    node = interface_state.interface.nodesByNum.get(node_num, {})
+    if node.get("isFavorite"):
+        return get_color("node_favorite", reverse=reverse)
+    elif node.get("isIgnored"):
+        return get_color("node_ignored", reverse=reverse)
+    return get_color("settings_default", reverse=reverse)
+
 
 # Aliases
 Segment = tuple[str, str, bool, bool]
@@ -128,7 +140,6 @@ def draw_arrows(
     win: object, visible_height: int, max_index: int, start_index: List[int], show_save_option: bool
 ) -> None:
 
-    # vh = visible_height + (1 if show_save_option else 0)
     mi = max_index - (2 if show_save_option else 0)
 
     if visible_height < mi:
@@ -316,3 +327,91 @@ def wrap_text(text: str, wrap_width: int) -> List[str]:
         wrapped_lines.append(line_buffer)
 
     return wrapped_lines
+
+
+def move_main_highlight(
+    old_idx: int, new_idx, options: List[str], menu_win: curses.window, menu_pad: curses.window, ui_state: object
+) -> None:
+
+    if old_idx == new_idx:  # No-op
+        return
+
+    max_index = len(options) - 1
+    visible_height = menu_win.getmaxyx()[0] - 2
+
+    if new_idx < ui_state.start_index[ui_state.current_window]:  # Moving above the visible area
+        ui_state.start_index[ui_state.current_window] = new_idx
+    elif new_idx >= ui_state.start_index[ui_state.current_window] + visible_height:  # Moving below the visible area
+        ui_state.start_index[ui_state.current_window] = new_idx - visible_height + 1
+
+    # Ensure start_index is within bounds
+    ui_state.start_index[ui_state.current_window] = max(
+        0, min(ui_state.start_index[ui_state.current_window], max_index - visible_height + 1)
+    )
+
+    highlight_line(menu_win, menu_pad, old_idx, new_idx, visible_height)
+
+    if ui_state.current_window == 0:  # hack to fix max_index
+        max_index += 1
+
+    draw_main_arrows(menu_win, max_index, window=ui_state.current_window)
+    menu_win.refresh()
+
+
+def highlight_line(
+    menu_win: curses.window, menu_pad: curses.window, old_idx: int, new_idx: int, visible_height: int
+) -> None:
+
+    if ui_state.current_window == 0:
+        color_old = (
+            get_color("channel_selected") if old_idx == ui_state.selected_channel else get_color("channel_list")
+        )
+        color_new = get_color("channel_list", reverse=True) if True else get_color("channel_list", reverse=True)
+        menu_pad.chgat(old_idx, 1, menu_pad.getmaxyx()[1] - 4, color_old)
+        menu_pad.chgat(new_idx, 1, menu_pad.getmaxyx()[1] - 4, color_new)
+
+    elif ui_state.current_window == 2:
+        menu_pad.chgat(old_idx, 1, menu_pad.getmaxyx()[1] - 4, get_node_color(old_idx))
+        menu_pad.chgat(new_idx, 1, menu_pad.getmaxyx()[1] - 4, get_node_color(new_idx, reverse=True))
+
+    menu_win.refresh()
+
+    # Refresh pad only if scrolling is needed
+    menu_pad.refresh(
+        ui_state.start_index[ui_state.current_window],
+        0,
+        menu_win.getbegyx()[0] + 1,
+        menu_win.getbegyx()[1] + 1,
+        menu_win.getbegyx()[0] + visible_height,
+        menu_win.getbegyx()[1] + menu_win.getmaxyx()[1] - 3,
+    )
+
+
+def draw_main_arrows(win: object, max_index: int, window: int, **kwargs) -> None:
+
+    height, width = win.getmaxyx()
+    usable_height = height - 2
+    usable_width = width - 2
+
+    if window == 1 and ui_state.display_log:
+        if log_height := kwargs.get("log_height"):
+            usable_height -= log_height - 1
+
+    if usable_height < max_index:
+        if ui_state.start_index[window] > 0:
+            win.addstr(1, usable_width, "▲", get_color("settings_default"))
+        else:
+            win.addstr(1, usable_width, " ", get_color("settings_default"))
+
+        if max_index - ui_state.start_index[window] - 1 >= usable_height:
+            win.addstr(usable_height, usable_width, "▼", get_color("settings_default"))
+        else:
+            win.addstr(usable_height, usable_width, " ", get_color("settings_default"))
+    else:
+        win.addstr(1, usable_width, " ", get_color("settings_default"))
+        win.addstr(usable_height, usable_width, " ", get_color("settings_default"))
+
+
+def get_msg_window_lines(messages_win, packetlog_win) -> None:
+    packetlog_height = packetlog_win.getmaxyx()[0] - 1 if ui_state.display_log else 0
+    return messages_win.getmaxyx()[0] - 2 - packetlog_height

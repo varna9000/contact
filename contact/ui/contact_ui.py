@@ -12,8 +12,7 @@ from contact.utilities.db_handler import get_name_from_database, update_node_inf
 from contact.utilities.input_handlers import get_list_input
 import contact.ui.default_config as config
 import contact.ui.dialog
-
-
+from contact.ui.nav_utils import move_main_highlight, draw_main_arrows, get_msg_window_lines
 from contact.utilities.singleton import ui_state, interface_state
 
 
@@ -86,6 +85,7 @@ def handle_resize(stdscr: curses.window, firstrun: bool) -> None:
         draw_channel_list()
         draw_messages_window(True)
         draw_node_list()
+
     except:
         # Resize events can come faster than we can re-draw, which can cause a curses error.
         # In this case we'll see another curses.KEY_RESIZE in our key handler and draw again later.
@@ -137,7 +137,7 @@ def main_ui(stdscr: curses.window) -> None:
                 select_channel(len(ui_state.channel_list) - 1)
             elif ui_state.current_window == 1:
                 msg_line_count = messages_pad.getmaxyx()[0]
-                ui_state.selected_message = max(msg_line_count - get_msg_window_lines(), 0)
+                ui_state.selected_message = max(msg_line_count - get_msg_window_lines(messages_win, packetlog_win), 0)
                 refresh_pad(1)
             elif ui_state.current_window == 2:
                 select_node(len(ui_state.node_list) - 1)
@@ -148,7 +148,9 @@ def main_ui(stdscr: curses.window) -> None:
                     ui_state.selected_channel - (channel_win.getmaxyx()[0] - 2)
                 )  # select_channel will bounds check for us
             elif ui_state.current_window == 1:
-                ui_state.selected_message = max(ui_state.selected_message - get_msg_window_lines(), 0)
+                ui_state.selected_message = max(
+                    ui_state.selected_message - get_msg_window_lines(messages_win, packetlog_win), 0
+                )
                 refresh_pad(1)
             elif ui_state.current_window == 2:
                 select_node(
@@ -163,7 +165,8 @@ def main_ui(stdscr: curses.window) -> None:
             elif ui_state.current_window == 1:
                 msg_line_count = messages_pad.getmaxyx()[0]
                 ui_state.selected_message = min(
-                    ui_state.selected_message + get_msg_window_lines(), msg_line_count - get_msg_window_lines()
+                    ui_state.selected_message + get_msg_window_lines(messages_win, packetlog_win),
+                    msg_line_count - get_msg_window_lines(messages_win, packetlog_win),
                 )
                 refresh_pad(1)
             elif ui_state.current_window == 2:
@@ -181,7 +184,6 @@ def main_ui(stdscr: curses.window) -> None:
                 channel_win.attrset(get_color("window_frame"))
                 channel_win.box()
                 channel_win.refresh()
-                highlight_line(False, 0, ui_state.selected_channel)
                 refresh_pad(0)
             if old_window == 1:
                 messages_win.attrset(get_color("window_frame"))
@@ -193,7 +195,6 @@ def main_ui(stdscr: curses.window) -> None:
                 nodes_win.attrset(get_color("window_frame"))
                 nodes_win.box()
                 nodes_win.refresh()
-                highlight_line(False, 2, ui_state.selected_node)
                 refresh_pad(2)
 
             if ui_state.current_window == 0:
@@ -201,7 +202,6 @@ def main_ui(stdscr: curses.window) -> None:
                 channel_win.box()
                 channel_win.attrset(get_color("window_frame"))
                 channel_win.refresh()
-                highlight_line(True, 0, ui_state.selected_channel)
                 refresh_pad(0)
             elif ui_state.current_window == 1:
                 messages_win.attrset(get_color("window_frame_selected"))
@@ -215,7 +215,6 @@ def main_ui(stdscr: curses.window) -> None:
                 nodes_win.box()
                 nodes_win.attrset(get_color("window_frame"))
                 nodes_win.refresh()
-                highlight_line(True, 2, ui_state.selected_node)
                 refresh_pad(2)
 
         # Check for Esc
@@ -421,8 +420,7 @@ def main_ui(stdscr: curses.window) -> None:
 
 def draw_channel_list() -> None:
     channel_pad.erase()
-    win_height, win_width = channel_win.getmaxyx()
-    start_index = max(0, ui_state.selected_channel - (win_height - 3))  # Leave room for borders
+    win_width = channel_win.getmaxyx()[1]
 
     channel_pad.resize(len(ui_state.all_messages), channel_win.getmaxyx()[1])
 
@@ -460,6 +458,8 @@ def draw_channel_list() -> None:
     )
     channel_win.box()
     channel_win.attrset((get_color("window_frame")))
+
+    draw_main_arrows(channel_win, len(ui_state.channel_list), window=0)
     channel_win.refresh()
 
     refresh_pad(0)
@@ -501,10 +501,22 @@ def draw_messages_window(scroll_to_bottom: bool = False) -> None:
     messages_win.attrset(get_color("window_frame"))
     messages_win.refresh()
 
+    visible_lines = get_msg_window_lines(messages_win, packetlog_win)
+
     if scroll_to_bottom:
-        ui_state.selected_message = max(msg_line_count - get_msg_window_lines(), 0)
+        ui_state.selected_message = max(msg_line_count - visible_lines, 0)
+        ui_state.start_index[1] = max(msg_line_count - visible_lines, 0)
+        pass
     else:
-        ui_state.selected_message = max(min(ui_state.selected_message, msg_line_count - get_msg_window_lines()), 0)
+        ui_state.selected_message = max(min(ui_state.selected_message, msg_line_count - visible_lines), 0)
+
+    draw_main_arrows(
+        messages_win,
+        msg_line_count,
+        window=1,
+        log_height=packetlog_win.getmaxyx()[0],
+    )
+    messages_win.refresh()
 
     refresh_pad(1)
 
@@ -547,6 +559,8 @@ def draw_node_list() -> None:
     )
     nodes_win.box()
     nodes_win.attrset(get_color("window_frame"))
+
+    draw_main_arrows(nodes_win, len(ui_state.node_list), window=2)
     nodes_win.refresh()
 
     refresh_pad(2)
@@ -567,9 +581,15 @@ def select_channel(idx: int) -> None:
         remove_notification(ui_state.selected_channel)
         draw_channel_list()
         return
-    highlight_line(False, 0, old_selected_channel)
-    highlight_line(True, 0, ui_state.selected_channel)
-    refresh_pad(0)
+
+    move_main_highlight(
+        old_idx=old_selected_channel,
+        new_idx=ui_state.selected_channel,
+        options=ui_state.channel_list,
+        menu_win=channel_win,
+        menu_pad=channel_pad,
+        ui_state=ui_state,
+    )
 
 
 def scroll_channels(direction: int) -> None:
@@ -587,7 +607,30 @@ def scroll_messages(direction: int) -> None:
     ui_state.selected_message += direction
 
     msg_line_count = messages_pad.getmaxyx()[0]
-    ui_state.selected_message = max(0, min(ui_state.selected_message, msg_line_count - get_msg_window_lines()))
+    ui_state.selected_message = max(
+        0, min(ui_state.selected_message, msg_line_count - get_msg_window_lines(messages_win, packetlog_win))
+    )
+
+    max_index = msg_line_count - 1
+    visible_height = get_msg_window_lines(messages_win, packetlog_win)
+
+    if ui_state.selected_message < ui_state.start_index[ui_state.current_window]:  # Moving above the visible area
+        ui_state.start_index[ui_state.current_window] = ui_state.selected_message
+    elif ui_state.selected_message >= ui_state.start_index[ui_state.current_window]:  # Moving below the visible area
+        ui_state.start_index[ui_state.current_window] = ui_state.selected_message
+
+    # Ensure start_index is within bounds
+    ui_state.start_index[ui_state.current_window] = max(
+        0, min(ui_state.start_index[ui_state.current_window], max_index - visible_height + 1)
+    )
+
+    draw_main_arrows(
+        messages_win,
+        msg_line_count,
+        ui_state.current_window,
+        log_height=packetlog_win.getmaxyx()[0],
+    )
+    messages_win.refresh()
 
     refresh_pad(1)
 
@@ -596,9 +639,14 @@ def select_node(idx: int) -> None:
     old_selected_node = ui_state.selected_node
     ui_state.selected_node = max(0, min(idx, len(ui_state.node_list) - 1))
 
-    highlight_line(False, 2, old_selected_node)
-    highlight_line(True, 2, ui_state.selected_node)
-    refresh_pad(2)
+    move_main_highlight(
+        old_idx=old_selected_node,
+        new_idx=ui_state.selected_node,
+        options=ui_state.node_list,
+        menu_win=nodes_win,
+        menu_pad=nodes_pad,
+        ui_state=ui_state,
+    )
 
     draw_function_win()
 
@@ -805,11 +853,6 @@ def draw_function_win() -> None:
         draw_help()
 
 
-def get_msg_window_lines() -> None:
-    packetlog_height = packetlog_win.getmaxyx()[0] - 1 if ui_state.display_log else 0
-    return messages_win.getmaxyx()[0] - 2 - packetlog_height
-
-
 def refresh_pad(window: int) -> None:
 
     win_height = channel_win.getmaxyx()[0]
@@ -817,7 +860,7 @@ def refresh_pad(window: int) -> None:
     if window == 1:
         pad = messages_pad
         box = messages_win
-        lines = get_msg_window_lines()
+        lines = get_msg_window_lines(messages_win, packetlog_win)
         selected_item = ui_state.selected_message
         start_index = ui_state.selected_message
 
@@ -845,32 +888,8 @@ def refresh_pad(window: int) -> None:
         box.getbegyx()[0] + 1,
         box.getbegyx()[1] + 1,
         box.getbegyx()[0] + lines,
-        box.getbegyx()[1] + box.getmaxyx()[1] - 2,
+        box.getbegyx()[1] + box.getmaxyx()[1] - 3,
     )
-
-
-def highlight_line(highlight: bool, window: int, line: int) -> None:
-    pad = nodes_pad
-
-    color = get_color("node_list")
-    select_len = nodes_win.getmaxyx()[1] - 2
-
-    if window == 2:
-        node_num = ui_state.node_list[line]
-        node = interface_state.interface.nodesByNum[node_num]
-        if "isFavorite" in node and node["isFavorite"]:
-            color = get_color("node_favorite")
-        if "isIgnored" in node and node["isIgnored"]:
-            color = get_color("node_ignored")
-
-    if window == 0:
-        pad = channel_pad
-        color = get_color(
-            "channel_selected" if (line == ui_state.selected_channel and highlight == False) else "channel_list"
-        )
-        select_len = channel_win.getmaxyx()[1] - 2
-
-    pad.chgat(line, 1, select_len, color | curses.A_REVERSE if highlight else color)
 
 
 def add_notification(channel_number: int) -> None:
