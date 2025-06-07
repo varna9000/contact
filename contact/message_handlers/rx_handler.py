@@ -1,6 +1,8 @@
 import logging
 import os
 import platform
+import shutil
+import subprocess
 import time
 from datetime import datetime
 from typing import Any, Dict
@@ -25,12 +27,38 @@ from contact.utilities.singleton import ui_state, interface_state, app_state
 
 
 def play_sound():
-    if platform.system() == "Darwin":  # macOS
-        os.system("afplay /System/Library/Sounds/Ping.aiff")
-    elif platform.system() == "Linux":
-        os.system("paplay /usr/share/sounds/freedesktop/stereo/complete.oga")
-    else:
-        print("\a")  # fallback
+    try:
+        system = platform.system()
+
+        if system == "Darwin":  # macOS
+            sound_path = "/System/Library/Sounds/Ping.aiff"
+            if os.path.exists(sound_path):
+                subprocess.run(["afplay", sound_path], check=True)
+                return
+            else:
+                print(f"[WARN] macOS sound file not found: {sound_path}")
+
+        elif system == "Linux":
+            sound_path = "/usr/share/sounds/freedesktop/stereo/complete.oga"
+            if os.path.exists(sound_path):
+                if shutil.which("paplay"):
+                    subprocess.run(["paplay", sound_path], check=True)
+                    return
+                elif shutil.which("aplay"):
+                    subprocess.run(["aplay", sound_path], check=True)
+                    return
+                else:
+                    print("[WARN] No sound player found (paplay/aplay)")
+            else:
+                print(f"[WARN] Linux sound file not found: {sound_path}")
+
+    except subprocess.CalledProcessError as e:
+        print(f"[ERROR] Sound playback failed: {e}")
+    except Exception as e:
+        print(f"[ERROR] Unexpected error: {e}")
+
+    # Final fallback: terminal beep
+    print("\a")
 
 
 def on_receive(packet: Dict[str, Any], interface: Any) -> None:
