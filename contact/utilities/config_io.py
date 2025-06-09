@@ -1,5 +1,6 @@
 import yaml
 import logging
+import time
 from typing import List
 from google.protobuf.json_format import MessageToDict
 from meshtastic import mt_config
@@ -133,24 +134,29 @@ def config_import(interface, filename):
             logging.info(f"Setting device owner to {configuration['owner']}")
             waitForAckNak = True
             interface.getNode("^local", False).setOwner(configuration["owner"])
+            time.sleep(0.5)
 
         if "owner_short" in configuration:
             logging.info(f"Setting device owner short to {configuration['owner_short']}")
             waitForAckNak = True
             interface.getNode("^local", False).setOwner(long_name=None, short_name=configuration["owner_short"])
+            time.sleep(0.5)
 
         if "ownerShort" in configuration:
             logging.info(f"Setting device owner short to {configuration['ownerShort']}")
             waitForAckNak = True
             interface.getNode("^local", False).setOwner(long_name=None, short_name=configuration["ownerShort"])
+            time.sleep(0.5)
 
         if "channel_url" in configuration:
             logging.info(f"Setting channel url to {configuration['channel_url']}")
             interface.getNode("^local").setURL(configuration["channel_url"])
+            time.sleep(0.5)
 
         if "channelUrl" in configuration:
             logging.info(f"Setting channel url to {configuration['channelUrl']}")
             interface.getNode("^local").setURL(configuration["channelUrl"])
+            time.sleep(0.5)
 
         if "location" in configuration:
             alt = 0
@@ -169,12 +175,14 @@ def config_import(interface, filename):
                 logging.info(f"Fixing longitude at {lon} degrees")
             logging.info("Setting device position")
             interface.localNode.setFixedPosition(lat, lon, alt)
+            time.sleep(0.5)
 
         if "config" in configuration:
             localConfig = interface.getNode("^local").localConfig
             for section in configuration["config"]:
                 traverseConfig(section, configuration["config"][section], localConfig)
                 interface.getNode("^local").writeConfig(camel_to_snake(section))
+                time.sleep(0.5)
 
         if "module_config" in configuration:
             moduleConfig = interface.getNode("^local").moduleConfig
@@ -185,6 +193,7 @@ def config_import(interface, filename):
                     moduleConfig,
                 )
                 interface.getNode("^local").writeConfig(camel_to_snake(section))
+                time.sleep(0.5)
 
         interface.getNode("^local", False).commitSettingsTransaction()
         logging.info("Writing modified configuration to device")
