@@ -36,7 +36,7 @@ def play_sound():
                 subprocess.run(["afplay", sound_path], check=True)
                 return
             else:
-                print(f"[WARN] macOS sound file not found: {sound_path}")
+                logging.warning(f"macOS sound file not found: {sound_path}")
 
         elif system == "Linux":
             sound_path = "/usr/share/sounds/freedesktop/stereo/complete.oga"
@@ -48,14 +48,14 @@ def play_sound():
                     subprocess.run(["aplay", sound_path], check=True)
                     return
                 else:
-                    print("[WARN] No sound player found (paplay/aplay)")
+                    logging.warning("No sound player found (paplay/aplay)")
             else:
-                print(f"[WARN] Linux sound file not found: {sound_path}")
+                logging.warning(f"Linux sound file not found: {sound_path}")
 
     except subprocess.CalledProcessError as e:
-        print(f"[ERROR] Sound playback failed: {e}")
+        logging.error(f"Sound playback failed: {e}")
     except Exception as e:
-        print(f"[ERROR] Unexpected error: {e}")
+        logging.error(f"Unexpected error: {e}")
 
     # Final fallback: terminal beep
     print("\a")
