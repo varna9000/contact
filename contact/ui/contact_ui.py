@@ -139,6 +139,7 @@ def main_ui(stdscr: curses.window) -> None:
 
         elif char in (chr(curses.KEY_ENTER), chr(10), chr(13)):
             handle_enter(input_text)
+            input_text = ""
 
         elif char == chr(20):  # Ctrl + t for Traceroute
             handle_ctrl_t(stdscr)
