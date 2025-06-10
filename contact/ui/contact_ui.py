@@ -27,13 +27,20 @@ def handle_resize(stdscr: curses.window, firstrun: bool) -> None:
     nodes_width = int(config.node_list_16ths) * (width // 16)
     messages_width = width - channel_width - nodes_width
 
+    entry_height = 3
+    function_height = 3
+    y_pad = entry_height + function_height
+    packet_log_height = int(height / 3)
+
     if firstrun:
-        entry_win = curses.newwin(3, width, 0, 0)
-        channel_win = curses.newwin(height - 6, channel_width, 3, 0)
-        messages_win = curses.newwin(height - 6, messages_width, 3, channel_width)
-        nodes_win = curses.newwin(height - 6, nodes_width, 3, channel_width + messages_width)
-        function_win = curses.newwin(3, width, height - 3, 0)
-        packetlog_win = curses.newwin(int(height / 3), messages_width, height - int(height / 3) - 3, channel_width)
+        entry_win = curses.newwin(entry_height, width, 0, 0)
+        channel_win = curses.newwin(height - y_pad, channel_width, entry_height, 0)
+        messages_win = curses.newwin(height - y_pad, messages_width, entry_height, channel_width)
+        nodes_win = curses.newwin(height - y_pad, nodes_width, entry_height, channel_width + messages_width)
+        function_win = curses.newwin(function_height, width, height - function_height, 0)
+        packetlog_win = curses.newwin(
+            packet_log_height, messages_width, height - packet_log_height - function_height, channel_width
+        )
 
         # Will be resized to what we need when drawn
         messages_pad = curses.newpad(1, 1)
@@ -58,19 +65,19 @@ def handle_resize(stdscr: curses.window, firstrun: bool) -> None:
 
         entry_win.resize(3, width)
 
-        channel_win.resize(height - 6, channel_width)
+        channel_win.resize(height - y_pad, channel_width)
 
-        messages_win.resize(height - 6, messages_width)
+        messages_win.resize(height - y_pad, messages_width)
         messages_win.mvwin(3, channel_width)
 
-        nodes_win.resize(height - 6, nodes_width)
-        nodes_win.mvwin(3, channel_width + messages_width)
+        nodes_win.resize(height - y_pad, nodes_width)
+        nodes_win.mvwin(entry_height, channel_width + messages_width)
 
         function_win.resize(3, width)
-        function_win.mvwin(height - 3, 0)
+        function_win.mvwin(height - function_height, 0)
 
-        packetlog_win.resize(int(height / 3), messages_width)
-        packetlog_win.mvwin(height - int(height / 3) - 3, channel_width)
+        packetlog_win.resize(packet_log_height, messages_width)
+        packetlog_win.mvwin(height - packet_log_height - function_height, channel_width)
 
     # Draw window borders
     for win in [channel_win, entry_win, nodes_win, messages_win, function_win]:
