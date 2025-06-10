@@ -1,5 +1,4 @@
 import curses
-import textwrap
 import logging
 import traceback
 from typing import Union
@@ -12,7 +11,7 @@ from contact.utilities.db_handler import get_name_from_database, update_node_inf
 from contact.utilities.input_handlers import get_list_input
 import contact.ui.default_config as config
 import contact.ui.dialog
-from contact.ui.nav_utils import move_main_highlight, draw_main_arrows, get_msg_window_lines
+from contact.ui.nav_utils import move_main_highlight, draw_main_arrows, get_msg_window_lines, wrap_text
 from contact.utilities.singleton import ui_state, interface_state
 
 
@@ -551,7 +550,7 @@ def draw_messages_window(scroll_to_bottom: bool = False) -> None:
         row = 0
         for prefix, message in messages:
             full_message = f"{prefix}{message}"
-            wrapped_lines = textwrap.wrap(full_message, messages_win.getmaxyx()[1] - 2)
+            wrapped_lines = wrap_text(full_message, messages_win.getmaxyx()[1])
             msg_line_count += len(wrapped_lines)
             messages_pad.resize(msg_line_count, messages_win.getmaxyx()[1])
 

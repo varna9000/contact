@@ -1,5 +1,7 @@
 import curses
 import re
+from unicodedata import east_asian_width
+
 from contact.ui.colors import get_color
 from contact.utilities.control_utils import transform_menu_path
 from typing import Any, Optional, List, Dict
@@ -293,6 +295,8 @@ def get_wrapped_help_text(
 
     return wrapped_help
 
+def text_width(text: str) -> int:
+    return sum(2 if east_asian_width(c) in "FW" else 1 for c in text)
 
 def wrap_text(text: str, wrap_width: int) -> List[str]:
     """Wraps text while preserving spaces and breaking long words."""
@@ -304,7 +308,7 @@ def wrap_text(text: str, wrap_width: int) -> List[str]:
     wrap_width -= margin
 
     for word in words:
-        word_length = len(word)
+        word_length = text_width(word)
 
         if word_length > wrap_width:  # Break long words
             if line_buffer:
