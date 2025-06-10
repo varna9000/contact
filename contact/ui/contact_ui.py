@@ -17,6 +17,7 @@ from contact.utilities.singleton import ui_state, interface_state
 
 
 def handle_resize(stdscr: curses.window, firstrun: bool) -> None:
+    """Handle terminal resize events and redraw the UI accordingly."""
     global messages_pad, messages_win, nodes_pad, nodes_win, channel_pad, channel_win, function_win, packetlog_win, entry_win
 
     # Calculate window max dimensions
@@ -100,6 +101,7 @@ def handle_resize(stdscr: curses.window, firstrun: bool) -> None:
 
 
 def main_ui(stdscr: curses.window) -> None:
+    """Main UI loop for the curses interface."""
     global input_text
     input_text = ""
     stdscr.keypad(True)
@@ -115,307 +117,59 @@ def main_ui(stdscr: curses.window) -> None:
         # draw_debug(f"Keypress: {char}")
 
         if char == curses.KEY_UP:
-            if ui_state.current_window == 0:
-                scroll_channels(-1)
-            elif ui_state.current_window == 1:
-                scroll_messages(-1)
-            elif ui_state.current_window == 2:
-                scroll_nodes(-1)
+            handle_up()
 
         elif char == curses.KEY_DOWN:
-            if ui_state.current_window == 0:
-                scroll_channels(1)
-            elif ui_state.current_window == 1:
-                scroll_messages(1)
-            elif ui_state.current_window == 2:
-                scroll_nodes(1)
+            handle_down()
 
         elif char == curses.KEY_HOME:
-            if ui_state.current_window == 0:
-                select_channel(0)
-            elif ui_state.current_window == 1:
-                ui_state.selected_message = 0
-                refresh_pad(1)
-            elif ui_state.current_window == 2:
-                select_node(0)
+            handle_home()
 
         elif char == curses.KEY_END:
-            if ui_state.current_window == 0:
-                select_channel(len(ui_state.channel_list) - 1)
-            elif ui_state.current_window == 1:
-                msg_line_count = messages_pad.getmaxyx()[0]
-                ui_state.selected_message = max(msg_line_count - get_msg_window_lines(messages_win, packetlog_win), 0)
-                refresh_pad(1)
-            elif ui_state.current_window == 2:
-                select_node(len(ui_state.node_list) - 1)
+            handle_end()
 
         elif char == curses.KEY_PPAGE:
-            if ui_state.current_window == 0:
-                select_channel(
-                    ui_state.selected_channel - (channel_win.getmaxyx()[0] - 2)
-                )  # select_channel will bounds check for us
-            elif ui_state.current_window == 1:
-                ui_state.selected_message = max(
-                    ui_state.selected_message - get_msg_window_lines(messages_win, packetlog_win), 0
-                )
-                refresh_pad(1)
-            elif ui_state.current_window == 2:
-                select_node(
-                    ui_state.selected_node - (nodes_win.getmaxyx()[0] - 2)
-                )  # select_node will bounds check for us
+            handle_pageup()
 
         elif char == curses.KEY_NPAGE:
-            if ui_state.current_window == 0:
-                select_channel(
-                    ui_state.selected_channel + (channel_win.getmaxyx()[0] - 2)
-                )  # select_channel will bounds check for us
-            elif ui_state.current_window == 1:
-                msg_line_count = messages_pad.getmaxyx()[0]
-                ui_state.selected_message = min(
-                    ui_state.selected_message + get_msg_window_lines(messages_win, packetlog_win),
-                    msg_line_count - get_msg_window_lines(messages_win, packetlog_win),
-                )
-                refresh_pad(1)
-            elif ui_state.current_window == 2:
-                select_node(
-                    ui_state.selected_node + (nodes_win.getmaxyx()[0] - 2)
-                )  # select_node will bounds check for us
+            handle_pagedown()
 
         elif char == curses.KEY_LEFT or char == curses.KEY_RIGHT:
-            delta = -1 if char == curses.KEY_LEFT else 1
-
-            old_window = ui_state.current_window
-            ui_state.current_window = (ui_state.current_window + delta) % 3
-
-            if old_window == 0:
-                channel_win.attrset(get_color("window_frame"))
-                channel_win.box()
-                channel_win.refresh()
-                refresh_pad(0)
-            if old_window == 1:
-                messages_win.attrset(get_color("window_frame"))
-                messages_win.box()
-                messages_win.refresh()
-                refresh_pad(1)
-            elif old_window == 2:
-                draw_function_win()
-                nodes_win.attrset(get_color("window_frame"))
-                nodes_win.box()
-                nodes_win.refresh()
-                refresh_pad(2)
-
-            if ui_state.current_window == 0:
-                channel_win.attrset(get_color("window_frame_selected"))
-                channel_win.box()
-                channel_win.attrset(get_color("window_frame"))
-                channel_win.refresh()
-                refresh_pad(0)
-            elif ui_state.current_window == 1:
-                messages_win.attrset(get_color("window_frame_selected"))
-                messages_win.box()
-                messages_win.attrset(get_color("window_frame"))
-                messages_win.refresh()
-                refresh_pad(1)
-            elif ui_state.current_window == 2:
-                draw_function_win()
-                nodes_win.attrset(get_color("window_frame_selected"))
-                nodes_win.box()
-                nodes_win.attrset(get_color("window_frame"))
-                nodes_win.refresh()
-                refresh_pad(2)
-
-        # Check for Esc
-        elif char == chr(27):
-            break
-
-        # Check for Ctrl + t
-        elif char == chr(20):
-            send_traceroute()
-            curses.curs_set(0)  # Hide cursor
-            contact.ui.dialog.dialog(
-                stdscr,
-                "Traceroute Sent",
-                "Results will appear in messages window.\nNote: Traceroute is limited to once every 30 seconds.",
-            )
-            curses.curs_set(1)  # Show cursor again
-            handle_resize(stdscr, False)
+            handle_leftright(char)
 
         elif char in (chr(curses.KEY_ENTER), chr(10), chr(13)):
-            if ui_state.current_window == 2:
-                node_list = ui_state.node_list
-                if node_list[ui_state.selected_node] not in ui_state.channel_list:
-                    ui_state.channel_list.append(node_list[ui_state.selected_node])
-                if node_list[ui_state.selected_node] not in ui_state.all_messages:
-                    ui_state.all_messages[node_list[ui_state.selected_node]] = []
+            handle_enter(input_text)
 
-                ui_state.selected_channel = ui_state.channel_list.index(node_list[ui_state.selected_node])
-
-                if is_chat_archived(ui_state.channel_list[ui_state.selected_channel]):
-                    update_node_info_in_db(ui_state.channel_list[ui_state.selected_channel], chat_archived=False)
-
-                ui_state.selected_node = 0
-                ui_state.current_window = 0
-
-                draw_node_list()
-                draw_channel_list()
-                draw_messages_window(True)
-
-            elif len(input_text) > 0:
-                # Enter key pressed, send user input as message
-                send_message(input_text, channel=ui_state.selected_channel)
-                draw_messages_window(True)
-
-                # Clear entry window and reset input text
-                input_text = ""
-                entry_win.erase()
+        elif char == chr(20):  # Ctrl + t for Traceroute
+            handle_ctrl_t(stdscr)
 
         elif char in (curses.KEY_BACKSPACE, chr(127)):
-            if input_text:
-                input_text = input_text[:-1]
-                y, x = entry_win.getyx()
-                entry_win.move(y, x - 1)
-                entry_win.addch(" ")  #
-                entry_win.move(y, x - 1)
-            entry_win.refresh()
+            handle_backspace(entry_win, input_text)
 
         elif char == "`":  # ` Launch the settings interface
-            curses.curs_set(0)
-            settings_menu(stdscr, interface_state.interface)
-            curses.curs_set(1)
-            refresh_node_list()
-            handle_resize(stdscr, False)
+            handle_backtick(stdscr)
 
-        elif char == chr(16):
-            # Display packet log
-            if ui_state.display_log is False:
-                ui_state.display_log = True
-                draw_messages_window(True)
-            else:
-                ui_state.display_log = False
-                packetlog_win.erase()
-                draw_messages_window(True)
+        elif char == chr(16):  # Ctrl + P for Packet Log
+            handle_ctrl_p()
 
         elif char == curses.KEY_RESIZE:
             input_text = ""
             handle_resize(stdscr, False)
 
-        # ^D
-        elif char == chr(4):
-            if ui_state.current_window == 0:
-                if isinstance(ui_state.channel_list[ui_state.selected_channel], int):
-                    update_node_info_in_db(ui_state.channel_list[ui_state.selected_channel], chat_archived=True)
+        elif char == chr(4):  # Ctrl + D to delete current channel or node
+            handle_ctrl_d()
 
-                    # Shift notifications up to account for deleted item
-                    for i in range(len(ui_state.notifications)):
-                        if ui_state.notifications[i] > ui_state.selected_channel:
-                            ui_state.notifications[i] -= 1
+        elif char == chr(31):  # Ctrl + / to search
+            handle_ctrl_fslash()
 
-                    del ui_state.channel_list[ui_state.selected_channel]
-                    ui_state.selected_channel = min(ui_state.selected_channel, len(ui_state.channel_list) - 1)
-                    select_channel(ui_state.selected_channel)
-                    draw_channel_list()
-                    draw_messages_window()
+        elif char == chr(6):  # Ctrl + F to toggle favorite
+            handle_ctrl_f(stdscr)
 
-            if ui_state.current_window == 2:
-                curses.curs_set(0)
-                confirmation = get_list_input(
-                    f"Remove {get_name_from_database(ui_state.node_list[ui_state.selected_node])} from nodedb?",
-                    "No",
-                    ["Yes", "No"],
-                )
-                if confirmation == "Yes":
-                    interface_state.interface.localNode.removeNode(ui_state.node_list[ui_state.selected_node])
+        elif char == chr(7):  # Ctrl + G to toggle ignored
+            handle_ctlr_g(stdscr)
 
-                    # Directly modifying the interface from client code - good? Bad? If it's stupid but it works, it's not supid?
-                    del interface_state.interface.nodesByNum[ui_state.node_list[ui_state.selected_node]]
-
-                    # Convert to "!hex" representation that interface.nodes uses
-                    hexid = f"!{hex(ui_state.node_list[ui_state.selected_node])[2:]}"
-                    del interface_state.interface.nodes[hexid]
-
-                    ui_state.node_list.pop(ui_state.selected_node)
-
-                    draw_messages_window()
-                    draw_node_list()
-                else:
-                    draw_messages_window()
-                curses.curs_set(1)
-                continue
-
-        # ^/
-        elif char == chr(31):
-            if ui_state.current_window == 2 or ui_state.current_window == 0:
-                search(ui_state.current_window)
-
-        # ^F
-        elif char == chr(6):
-            if ui_state.current_window == 2:
-                selectedNode = interface_state.interface.nodesByNum[ui_state.node_list[ui_state.selected_node]]
-
-                curses.curs_set(0)
-
-                if "isFavorite" not in selectedNode or selectedNode["isFavorite"] == False:
-                    confirmation = get_list_input(
-                        f"Set {get_name_from_database(ui_state.node_list[ui_state.selected_node])} as Favorite?",
-                        None,
-                        ["Yes", "No"],
-                    )
-                    if confirmation == "Yes":
-                        interface_state.interface.localNode.setFavorite(ui_state.node_list[ui_state.selected_node])
-                        # Maybe we shouldn't be modifying the nodedb, but maybe it should update itself
-                        interface_state.interface.nodesByNum[ui_state.node_list[ui_state.selected_node]][
-                            "isFavorite"
-                        ] = True
-
-                        refresh_node_list()
-
-                else:
-                    confirmation = get_list_input(
-                        f"Remove {get_name_from_database(ui_state.node_list[ui_state.selected_node])} from Favorites?",
-                        None,
-                        ["Yes", "No"],
-                    )
-                    if confirmation == "Yes":
-                        interface_state.interface.localNode.removeFavorite(ui_state.node_list[ui_state.selected_node])
-                        # Maybe we shouldn't be modifying the nodedb, but maybe it should update itself
-                        interface_state.interface.nodesByNum[ui_state.node_list[ui_state.selected_node]][
-                            "isFavorite"
-                        ] = False
-
-                        refresh_node_list()
-
-                handle_resize(stdscr, False)
-
-        elif char == chr(7):
-            if ui_state.current_window == 2:
-                selectedNode = interface_state.interface.nodesByNum[ui_state.node_list[ui_state.selected_node]]
-
-                curses.curs_set(0)
-
-                if "isIgnored" not in selectedNode or selectedNode["isIgnored"] == False:
-                    confirmation = get_list_input(
-                        f"Set {get_name_from_database(ui_state.node_list[ui_state.selected_node])} as Ignored?",
-                        "No",
-                        ["Yes", "No"],
-                    )
-                    if confirmation == "Yes":
-                        interface_state.interface.localNode.setIgnored(ui_state.node_list[ui_state.selected_node])
-                        interface_state.interface.nodesByNum[ui_state.node_list[ui_state.selected_node]][
-                            "isIgnored"
-                        ] = True
-                else:
-                    confirmation = get_list_input(
-                        f"Remove {get_name_from_database(ui_state.node_list[ui_state.selected_node])} from Ignored?",
-                        "No",
-                        ["Yes", "No"],
-                    )
-                    if confirmation == "Yes":
-                        interface_state.interface.localNode.removeIgnored(ui_state.node_list[ui_state.selected_node])
-                        interface_state.interface.nodesByNum[ui_state.node_list[ui_state.selected_node]][
-                            "isIgnored"
-                        ] = False
-
-                handle_resize(stdscr, False)
+        elif char == chr(27):  # Escape to exit
+            break
 
         else:
             # Append typed character to input text
@@ -425,7 +179,316 @@ def main_ui(stdscr: curses.window) -> None:
                 input_text += chr(char)
 
 
+def handle_up() -> None:
+    """Handle key up events to scroll the current window."""
+    if ui_state.current_window == 0:
+        scroll_channels(-1)
+    elif ui_state.current_window == 1:
+        scroll_messages(-1)
+    elif ui_state.current_window == 2:
+        scroll_nodes(-1)
+
+
+def handle_down() -> None:
+    """Handle key down events to scroll the current window."""
+    if ui_state.current_window == 0:
+        scroll_channels(1)
+    elif ui_state.current_window == 1:
+        scroll_messages(1)
+    elif ui_state.current_window == 2:
+        scroll_nodes(1)
+
+
+def handle_home() -> None:
+    """Handle home key events to select the first item in the current window."""
+    if ui_state.current_window == 0:
+        select_channel(0)
+    elif ui_state.current_window == 1:
+        ui_state.selected_message = 0
+        refresh_pad(1)
+    elif ui_state.current_window == 2:
+        select_node(0)
+
+
+def handle_end() -> None:
+    """Handle end key events to select the last item in the current window."""
+    if ui_state.current_window == 0:
+        select_channel(len(ui_state.channel_list) - 1)
+    elif ui_state.current_window == 1:
+        msg_line_count = messages_pad.getmaxyx()[0]
+        ui_state.selected_message = max(msg_line_count - get_msg_window_lines(messages_win, packetlog_win), 0)
+        refresh_pad(1)
+    elif ui_state.current_window == 2:
+        select_node(len(ui_state.node_list) - 1)
+
+
+def handle_pageup() -> None:
+    """Handle page up key events to scroll the current window by a page."""
+    if ui_state.current_window == 0:
+        select_channel(
+            ui_state.selected_channel - (channel_win.getmaxyx()[0] - 2)
+        )  # select_channel will bounds check for us
+    elif ui_state.current_window == 1:
+        ui_state.selected_message = max(
+            ui_state.selected_message - get_msg_window_lines(messages_win, packetlog_win), 0
+        )
+        refresh_pad(1)
+    elif ui_state.current_window == 2:
+        select_node(ui_state.selected_node - (nodes_win.getmaxyx()[0] - 2))  # select_node will bounds check for us
+
+
+def handle_pagedown() -> None:
+    """Handle page down key events to scroll the current window down."""
+    if ui_state.current_window == 0:
+        select_channel(
+            ui_state.selected_channel + (channel_win.getmaxyx()[0] - 2)
+        )  # select_channel will bounds check for us
+    elif ui_state.current_window == 1:
+        msg_line_count = messages_pad.getmaxyx()[0]
+        ui_state.selected_message = min(
+            ui_state.selected_message + get_msg_window_lines(messages_win, packetlog_win),
+            msg_line_count - get_msg_window_lines(messages_win, packetlog_win),
+        )
+        refresh_pad(1)
+    elif ui_state.current_window == 2:
+        select_node(ui_state.selected_node + (nodes_win.getmaxyx()[0] - 2))  # select_node will bounds check for us
+
+
+def handle_leftright(char: int) -> None:
+    """Handle left/right key events to switch between windows."""
+    delta = -1 if char == curses.KEY_LEFT else 1
+    old_window = ui_state.current_window
+    ui_state.current_window = (ui_state.current_window + delta) % 3
+
+    if old_window == 0:
+        channel_win.attrset(get_color("window_frame"))
+        channel_win.box()
+        channel_win.refresh()
+        refresh_pad(0)
+    if old_window == 1:
+        messages_win.attrset(get_color("window_frame"))
+        messages_win.box()
+        messages_win.refresh()
+        refresh_pad(1)
+    elif old_window == 2:
+        draw_function_win()
+        nodes_win.attrset(get_color("window_frame"))
+        nodes_win.box()
+        nodes_win.refresh()
+        refresh_pad(2)
+
+    if ui_state.current_window == 0:
+        channel_win.attrset(get_color("window_frame_selected"))
+        channel_win.box()
+        channel_win.attrset(get_color("window_frame"))
+        channel_win.refresh()
+        refresh_pad(0)
+    elif ui_state.current_window == 1:
+        messages_win.attrset(get_color("window_frame_selected"))
+        messages_win.box()
+        messages_win.attrset(get_color("window_frame"))
+        messages_win.refresh()
+        refresh_pad(1)
+    elif ui_state.current_window == 2:
+        draw_function_win()
+        nodes_win.attrset(get_color("window_frame_selected"))
+        nodes_win.box()
+        nodes_win.attrset(get_color("window_frame"))
+        nodes_win.refresh()
+        refresh_pad(2)
+
+
+def handle_enter(input_text: str) -> None:
+    """Handle Enter key events to send messages or select channels."""
+    if ui_state.current_window == 2:
+        node_list = ui_state.node_list
+        if node_list[ui_state.selected_node] not in ui_state.channel_list:
+            ui_state.channel_list.append(node_list[ui_state.selected_node])
+        if node_list[ui_state.selected_node] not in ui_state.all_messages:
+            ui_state.all_messages[node_list[ui_state.selected_node]] = []
+
+        ui_state.selected_channel = ui_state.channel_list.index(node_list[ui_state.selected_node])
+
+        if is_chat_archived(ui_state.channel_list[ui_state.selected_channel]):
+            update_node_info_in_db(ui_state.channel_list[ui_state.selected_channel], chat_archived=False)
+
+        ui_state.selected_node = 0
+        ui_state.current_window = 0
+
+        draw_node_list()
+        draw_channel_list()
+        draw_messages_window(True)
+
+    elif len(input_text) > 0:
+        # Enter key pressed, send user input as message
+        send_message(input_text, channel=ui_state.selected_channel)
+        draw_messages_window(True)
+
+        # Clear entry window and reset input text
+        input_text = ""
+        entry_win.erase()
+
+
+def handle_ctrl_t(stdscr: curses.window) -> None:
+    """Handle Ctrl + T key events to send a traceroute."""
+    send_traceroute()
+    curses.curs_set(0)  # Hide cursor
+    contact.ui.dialog.dialog(
+        stdscr,
+        "Traceroute Sent",
+        "Results will appear in messages window.\nNote: Traceroute is limited to once every 30 seconds.",
+    )
+    curses.curs_set(1)  # Show cursor again
+    handle_resize(stdscr, False)
+
+
+def handle_backspace(entry_win: curses.window, input_text: str) -> None:
+    """Handle backspace key events to remove the last character from input text."""
+    if input_text:
+        input_text = input_text[:-1]
+        y, x = entry_win.getyx()
+        entry_win.move(y, x - 1)
+        entry_win.addch(" ")  #
+        entry_win.move(y, x - 1)
+    entry_win.refresh()
+
+
+def handle_backtick(stdscr: curses.window) -> None:
+    """Handle backtick key events to open the settings menu."""
+    curses.curs_set(0)
+    settings_menu(stdscr, interface_state.interface)
+    curses.curs_set(1)
+    refresh_node_list()
+    handle_resize(stdscr, False)
+
+
+def handle_ctrl_p() -> None:
+    """Handle Ctrl + P key events to toggle the packet log display."""
+    # Display packet log
+    if ui_state.display_log is False:
+        ui_state.display_log = True
+        draw_messages_window(True)
+    else:
+        ui_state.display_log = False
+        packetlog_win.erase()
+        draw_messages_window(True)
+
+
+def handle_ctrl_d() -> None:
+    if ui_state.current_window == 0:
+        if isinstance(ui_state.channel_list[ui_state.selected_channel], int):
+            update_node_info_in_db(ui_state.channel_list[ui_state.selected_channel], chat_archived=True)
+
+            # Shift notifications up to account for deleted item
+            for i in range(len(ui_state.notifications)):
+                if ui_state.notifications[i] > ui_state.selected_channel:
+                    ui_state.notifications[i] -= 1
+
+            del ui_state.channel_list[ui_state.selected_channel]
+            ui_state.selected_channel = min(ui_state.selected_channel, len(ui_state.channel_list) - 1)
+            select_channel(ui_state.selected_channel)
+            draw_channel_list()
+            draw_messages_window()
+
+    if ui_state.current_window == 2:
+        curses.curs_set(0)
+        confirmation = get_list_input(
+            f"Remove {get_name_from_database(ui_state.node_list[ui_state.selected_node])} from nodedb?",
+            "No",
+            ["Yes", "No"],
+        )
+        if confirmation == "Yes":
+            interface_state.interface.localNode.removeNode(ui_state.node_list[ui_state.selected_node])
+
+            # Directly modifying the interface from client code - good? Bad? If it's stupid but it works, it's not supid?
+            del interface_state.interface.nodesByNum[ui_state.node_list[ui_state.selected_node]]
+
+            # Convert to "!hex" representation that interface.nodes uses
+            hexid = f"!{hex(ui_state.node_list[ui_state.selected_node])[2:]}"
+            del interface_state.interface.nodes[hexid]
+
+            ui_state.node_list.pop(ui_state.selected_node)
+
+            draw_messages_window()
+            draw_node_list()
+        else:
+            draw_messages_window()
+        curses.curs_set(1)
+
+
+def handle_ctrl_fslash() -> None:
+    """Handle Ctrl + / key events to search in the current window."""
+    if ui_state.current_window == 2 or ui_state.current_window == 0:
+        search(ui_state.current_window)
+
+
+def handle_ctrl_f(stdscr: curses.window) -> None:
+    """Handle Ctrl + F key events to toggle favorite status of the selected node."""
+    if ui_state.current_window == 2:
+        selectedNode = interface_state.interface.nodesByNum[ui_state.node_list[ui_state.selected_node]]
+
+        curses.curs_set(0)
+
+        if "isFavorite" not in selectedNode or selectedNode["isFavorite"] == False:
+            confirmation = get_list_input(
+                f"Set {get_name_from_database(ui_state.node_list[ui_state.selected_node])} as Favorite?",
+                None,
+                ["Yes", "No"],
+            )
+            if confirmation == "Yes":
+                interface_state.interface.localNode.setFavorite(ui_state.node_list[ui_state.selected_node])
+                # Maybe we shouldn't be modifying the nodedb, but maybe it should update itself
+                interface_state.interface.nodesByNum[ui_state.node_list[ui_state.selected_node]]["isFavorite"] = True
+
+                refresh_node_list()
+
+        else:
+            confirmation = get_list_input(
+                f"Remove {get_name_from_database(ui_state.node_list[ui_state.selected_node])} from Favorites?",
+                None,
+                ["Yes", "No"],
+            )
+            if confirmation == "Yes":
+                interface_state.interface.localNode.removeFavorite(ui_state.node_list[ui_state.selected_node])
+                # Maybe we shouldn't be modifying the nodedb, but maybe it should update itself
+                interface_state.interface.nodesByNum[ui_state.node_list[ui_state.selected_node]]["isFavorite"] = False
+
+                refresh_node_list()
+
+        handle_resize(stdscr, False)
+
+
+def handle_ctlr_g(stdscr: curses.window) -> None:
+    """Handle Ctrl + G key events to toggle ignored status of the selected node."""
+    if ui_state.current_window == 2:
+        selectedNode = interface_state.interface.nodesByNum[ui_state.node_list[ui_state.selected_node]]
+
+        curses.curs_set(0)
+
+        if "isIgnored" not in selectedNode or selectedNode["isIgnored"] == False:
+            confirmation = get_list_input(
+                f"Set {get_name_from_database(ui_state.node_list[ui_state.selected_node])} as Ignored?",
+                "No",
+                ["Yes", "No"],
+            )
+            if confirmation == "Yes":
+                interface_state.interface.localNode.setIgnored(ui_state.node_list[ui_state.selected_node])
+                interface_state.interface.nodesByNum[ui_state.node_list[ui_state.selected_node]]["isIgnored"] = True
+        else:
+            confirmation = get_list_input(
+                f"Remove {get_name_from_database(ui_state.node_list[ui_state.selected_node])} from Ignored?",
+                "No",
+                ["Yes", "No"],
+            )
+            if confirmation == "Yes":
+                interface_state.interface.localNode.removeIgnored(ui_state.node_list[ui_state.selected_node])
+                interface_state.interface.nodesByNum[ui_state.node_list[ui_state.selected_node]]["isIgnored"] = False
+
+        handle_resize(stdscr, False)
+
+
 def draw_channel_list() -> None:
+    """Update the channel list window and pad based on the current state."""
     channel_pad.erase()
     win_width = channel_win.getmaxyx()[1]
 
@@ -531,6 +594,7 @@ def draw_messages_window(scroll_to_bottom: bool = False) -> None:
 
 
 def draw_node_list() -> None:
+    """Update the nodes list window and pad based on the current state."""
     global nodes_pad
 
     # This didn't work, for some reason an error is thown on startup, so we just create the pad every time
@@ -579,6 +643,7 @@ def draw_node_list() -> None:
 
 
 def select_channel(idx: int) -> None:
+    """Select a channel by index and update the UI state accordingly."""
     old_selected_channel = ui_state.selected_channel
     ui_state.selected_channel = max(0, min(idx, len(ui_state.channel_list) - 1))
     draw_messages_window(True)
@@ -600,6 +665,7 @@ def select_channel(idx: int) -> None:
 
 
 def scroll_channels(direction: int) -> None:
+    """Scroll through the channel list by a given direction."""
     new_selected_channel = ui_state.selected_channel + direction
 
     if new_selected_channel < 0:
@@ -611,6 +677,7 @@ def scroll_channels(direction: int) -> None:
 
 
 def scroll_messages(direction: int) -> None:
+    """Scroll through the messages in the current channel by a given direction."""
     ui_state.selected_message += direction
 
     msg_line_count = messages_pad.getmaxyx()[0]
@@ -643,6 +710,7 @@ def scroll_messages(direction: int) -> None:
 
 
 def select_node(idx: int) -> None:
+    """Select a node by index and update the UI state accordingly."""
     old_selected_node = ui_state.selected_node
     ui_state.selected_node = max(0, min(idx, len(ui_state.node_list) - 1))
 
@@ -659,6 +727,7 @@ def select_node(idx: int) -> None:
 
 
 def scroll_nodes(direction: int) -> None:
+    """Scroll through the node list by a given direction."""
     new_selected_node = ui_state.selected_node + direction
 
     if new_selected_node < 0:
@@ -670,7 +739,7 @@ def scroll_nodes(direction: int) -> None:
 
 
 def draw_packetlog_win() -> None:
-
+    """Draw the packet log window with the latest packets."""
     columns = [10, 10, 15, 30]
     span = 0
 
@@ -723,6 +792,7 @@ def draw_packetlog_win() -> None:
 
 
 def search(win: int) -> None:
+    """Search for a node or channel based on user input."""
     start_idx = ui_state.selected_node
     select_func = select_node
 
@@ -771,6 +841,7 @@ def search(win: int) -> None:
 
 
 def draw_node_details() -> None:
+    """Draw the details of the selected node in the function window."""
     node = None
     try:
         node = interface_state.interface.nodesByNum[ui_state.node_list[ui_state.selected_node]]
@@ -834,16 +905,18 @@ def draw_node_details() -> None:
 
 
 def draw_help() -> None:
+    """Draw the help text in the function window."""
     cmds = [
         "↑→↓← = Select",
-        "    ENTER = Send",
-        "    ` = Settings",
-        "    ^P = Packet Log",
-        "    ESC = Quit",
-        "    ^t = Traceroute",
-        "    ^d = Archive Chat",
-        "    ^f = Favorite",
-        "    ^g = Ignore",
+        "   ENTER = Send",
+        "   ` = Settings",
+        "   ESC = Quit",
+        "   ^P = Packet Log",
+        "   ^t = Traceroute",
+        "   ^d = Archive Chat",
+        "   ^f = Favorite",
+        "   ^g = Ignore",
+        "   ^/ = Search",
     ]
     function_str = ""
     for s in cmds:
