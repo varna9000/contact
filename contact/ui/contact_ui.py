@@ -144,7 +144,7 @@ def main_ui(stdscr: curses.window) -> None:
             handle_ctrl_t(stdscr)
 
         elif char in (curses.KEY_BACKSPACE, chr(127)):
-            handle_backspace(entry_win, input_text)
+            input_text = handle_backspace(entry_win, input_text)
 
         elif char == "`":  # ` Launch the settings interface
             handle_backtick(stdscr)
@@ -351,6 +351,7 @@ def handle_backspace(entry_win: curses.window, input_text: str) -> None:
         entry_win.addch(" ")  #
         entry_win.move(y, x - 1)
     entry_win.refresh()
+    return input_text
 
 
 def handle_backtick(stdscr: curses.window) -> None:
