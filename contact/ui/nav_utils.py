@@ -300,6 +300,11 @@ def text_width(text: str) -> int:
 
 def wrap_text(text: str, wrap_width: int) -> List[str]:
     """Wraps text while preserving spaces and breaking long words."""
+
+    whitespace = '\t\n\x0b\x0c\r '
+    whitespace_trans = dict.fromkeys(map(ord, whitespace), ord(' '))
+    text = text.translate(whitespace_trans)
+
     words = re.findall(r"\S+|\s+", text)  # Capture words and spaces separately
     wrapped_lines = []
     line_buffer = ""
@@ -312,7 +317,7 @@ def wrap_text(text: str, wrap_width: int) -> List[str]:
 
         if word_length > wrap_width:  # Break long words
             if line_buffer:
-                wrapped_lines.append(line_buffer)
+                wrapped_lines.append(line_buffer.strip())
                 line_buffer = ""
                 line_length = 0
             for i in range(0, word_length, wrap_width):
@@ -320,7 +325,7 @@ def wrap_text(text: str, wrap_width: int) -> List[str]:
             continue
 
         if line_length + word_length > wrap_width and word.strip():
-            wrapped_lines.append(line_buffer)
+            wrapped_lines.append(line_buffer.strip())
             line_buffer = ""
             line_length = 0
 
@@ -328,7 +333,7 @@ def wrap_text(text: str, wrap_width: int) -> List[str]:
         line_length += word_length
 
     if line_buffer:
-        wrapped_lines.append(line_buffer)
+        wrapped_lines.append(line_buffer.strip())
 
     return wrapped_lines
 

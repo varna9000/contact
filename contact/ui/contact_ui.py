@@ -550,7 +550,7 @@ def draw_messages_window(scroll_to_bottom: bool = False) -> None:
         row = 0
         for prefix, message in messages:
             full_message = f"{prefix}{message}"
-            wrapped_lines = wrap_text(full_message, messages_win.getmaxyx()[1])
+            wrapped_lines = wrap_text(full_message, messages_win.getmaxyx()[1] - 2)
             msg_line_count += len(wrapped_lines)
             messages_pad.resize(msg_line_count, messages_win.getmaxyx()[1])
 
