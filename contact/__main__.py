@@ -53,22 +53,25 @@ logging.basicConfig(
 
 app_state.lock = threading.Lock()
 
+
 # ------------------------------------------------------------------------------
 # Main Program Logic
 # ------------------------------------------------------------------------------
+def prompt_region_if_unset(args: object) -> None:
+    """Prompt user to set region if it is unset."""
+    confirmation = get_list_input("Your region is UNSET. Set it now?", "Yes", ["Yes", "No"])
+    if confirmation == "Yes":
+        set_region(interface_state.interface)
+        interface_state.interface.close()
+        interface_state.interface = initialize_interface(args)
 
 
-def initialize_globals(args) -> None:
+def initialize_globals(args: object) -> None:
     """Initializes interface and shared globals."""
     interface_state.interface = initialize_interface(args)
 
-    # Prompt for region if unset
     if interface_state.interface.localNode.localConfig.lora.region == 0:
-        confirmation = get_list_input("Your region is UNSET. Set it now?", "Yes", ["Yes", "No"])
-        if confirmation == "Yes":
-            set_region(interface_state.interface)
-            interface_state.interface.close()
-            interface_state.interface = initialize_interface(args)
+        prompt_region_if_unset(args)
 
     interface_state.myNodeNum = get_nodeNum()
     ui_state.channel_list = get_channels()
