@@ -108,7 +108,7 @@ def main_ui(stdscr: curses.window) -> None:
     handle_resize(stdscr, True)
 
     while True:
-        draw_text_field(entry_win, f"Input: {input_text[-(stdscr.getmaxyx()[1] - 10):]}", get_color("input"))
+        draw_text_field(entry_win, f"Input: {(input_text or '')[-(stdscr.getmaxyx()[1] - 10):]}", get_color("input"))
 
         # Get user input from entry window
         char = entry_win.get_wch()
@@ -297,7 +297,7 @@ def handle_leftright(char: int) -> None:
         refresh_pad(2)
 
 
-def handle_enter(input_text: str) -> None:
+def handle_enter(input_text: str) -> str:
     """Handle Enter key events to send messages or select channels."""
     if ui_state.current_window == 2:
         node_list = ui_state.node_list
@@ -327,6 +327,7 @@ def handle_enter(input_text: str) -> None:
         # Clear entry window and reset input text
         entry_win.erase()
         return ""
+    return input_text
 
 
 def handle_ctrl_t(stdscr: curses.window) -> None:
@@ -342,7 +343,7 @@ def handle_ctrl_t(stdscr: curses.window) -> None:
     handle_resize(stdscr, False)
 
 
-def handle_backspace(entry_win: curses.window, input_text: str) -> None:
+def handle_backspace(entry_win: curses.window, input_text: str) -> str:
     """Handle backspace key events to remove the last character from input text."""
     if input_text:
         input_text = input_text[:-1]
