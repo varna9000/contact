@@ -29,33 +29,35 @@ from contact.utilities.singleton import ui_state, interface_state, app_state
 def play_sound():
     try:
         system = platform.system()
+        sound_path = ""
+        executable = ""
 
-        if system == "Darwin":  # macOS
+        if system == "Darwin": #macOS
             sound_path = "/System/Library/Sounds/Ping.aiff"
-            if os.path.exists(sound_path):
-                subprocess.run(["afplay", sound_path], check=True)
-                return
-            else:
-                logging.warning(f"macOS sound file not found: {sound_path}")
-
+            executable = "afplay"
         elif system == "Linux":
             sound_path = "/usr/share/sounds/freedesktop/stereo/complete.oga"
+            if(shutil.which("paplay")):
+                executable = "paplay"
+            else:
+                executable = "aplay"
+
+        if executable != "" and sound_path != "":
             if os.path.exists(sound_path):
-                if shutil.which("paplay"):
-                    subprocess.run(["paplay", sound_path], check=True)
-                    return
-                elif shutil.which("aplay"):
-                    subprocess.run(["aplay", sound_path], check=True)
+                if shutil.which(executable):
+                    subprocess.run([executable, sound_path], check=True,
+                                   stdout=subprocess.DEVNULL, stderr = subprocess.DEVNULL)
                     return
                 else:
-                    logging.warning("No sound player found (paplay/aplay)")
+                    logging.warning("No sound player found (afplay/paplay/aplay)")
             else:
-                logging.warning(f"Linux sound file not found: {sound_path}")
-
+                logging.warning(f"Sound file not found: {sound_path}")
     except subprocess.CalledProcessError as e:
         logging.error(f"Sound playback failed: {e}")
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
+
+
 
     # Final fallback: terminal beep
     print("\a")
