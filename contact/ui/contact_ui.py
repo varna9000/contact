@@ -137,8 +137,7 @@ def main_ui(stdscr: curses.window) -> None:
             handle_leftright(char)
 
         elif char in (chr(curses.KEY_ENTER), chr(10), chr(13)):
-            handle_enter(input_text)
-            input_text = ""
+            input_text = handle_enter(input_text)
 
         elif char == chr(20):  # Ctrl + t for Traceroute
             handle_ctrl_t(stdscr)
@@ -318,6 +317,7 @@ def handle_enter(input_text: str) -> None:
         draw_node_list()
         draw_channel_list()
         draw_messages_window(True)
+        return input_text
 
     elif len(input_text) > 0:
         # Enter key pressed, send user input as message
@@ -325,8 +325,8 @@ def handle_enter(input_text: str) -> None:
         draw_messages_window(True)
 
         # Clear entry window and reset input text
-        input_text = ""
         entry_win.erase()
+        return ""
 
 
 def handle_ctrl_t(stdscr: curses.window) -> None:
