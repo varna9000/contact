@@ -1,4 +1,5 @@
 import datetime
+import time
 from meshtastic.protobuf import config_pb2
 import contact.ui.default_config as config
 
@@ -134,3 +135,31 @@ def get_time_ago(timestamp):
     if unit != "s":
         return f"{value} {unit} ago"
     return "now"
+
+def add_new_message(channel_id, prefix, message):
+    if channel_id not in ui_state.all_messages:
+        ui_state.all_messages[channel_id] = []
+
+    # Timestamp handling
+    current_timestamp = time.time()
+    current_hour = datetime.datetime.fromtimestamp(current_timestamp).strftime("%Y-%m-%d %H:00")
+
+    # Retrieve the last timestamp if available
+    channel_messages = ui_state.all_messages[channel_id]
+    if channel_messages:
+        # Check the last entry for a timestamp
+        for entry in reversed(channel_messages):
+            if entry[0].startswith("--"):
+                last_hour = entry[0].strip("- ").strip()
+                break
+        else:
+            last_hour = None
+    else:
+        last_hour = None
+
+    # Add a new timestamp if it's a new hour
+    if last_hour != current_hour:
+        ui_state.all_messages[channel_id].append((f"-- {current_hour} --", ""))
+
+    # Add the message
+    ui_state.all_messages[channel_id].append((prefix,message))

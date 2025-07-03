@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Any, Dict
 
 import google.protobuf.json_format
@@ -15,6 +14,8 @@ from contact.utilities.db_handler import (
 import contact.ui.default_config as config
 
 from contact.utilities.singleton import ui_state, interface_state
+
+from contact.utilities.utils import add_new_message
 
 ack_naks: Dict[str, Dict[str, Any]] = {}  # requestId -> {channel, messageIndex, timestamp}
 
@@ -146,8 +147,9 @@ def on_response_traceroute(packet: Dict[str, Any]) -> None:
         update_node_info_in_db(packet["from"], chat_archived=False)
 
     channel_number = ui_state.channel_list.index(packet["from"])
+    channel_id = ui_state.channel_list[channel_number]
 
-    if ui_state.channel_list[channel_number] == ui_state.channel_list[ui_state.selected_channel]:
+    if channel_id == ui_state.channel_list[ui_state.selected_channel]:
         refresh_messages = True
     else:
         add_notification(channel_number)
@@ -155,18 +157,14 @@ def on_response_traceroute(packet: Dict[str, Any]) -> None:
 
     message_from_string = get_name_from_database(packet["from"], type="short") + ":\n"
 
-    if ui_state.channel_list[channel_number] not in ui_state.all_messages:
-        ui_state.all_messages[ui_state.channel_list[channel_number]] = []
-    ui_state.all_messages[ui_state.channel_list[channel_number]].append(
-        (f"{config.message_prefix} {message_from_string}", msg_str)
-    )
+    add_new_message(channel_id, f"{config.message_prefix} {message_from_string}", msg_str)
 
     if refresh_channels:
         draw_channel_list()
     if refresh_messages:
         draw_messages_window(True)
-    save_message_to_db(ui_state.channel_list[channel_number], packet["from"], msg_str)
 
+    save_message_to_db(channel_id, packet["from"], msg_str)
 
 def send_message(message: str, destination: int = BROADCAST_NUM, channel: int = 0) -> None:
     """
@@ -190,32 +188,7 @@ def send_message(message: str, destination: int = BROADCAST_NUM, channel: int = 
         channelIndex=send_on_channel,
     )
 
-    # Add sent message to the messages dictionary
-    if channel_id not in ui_state.all_messages:
-        ui_state.all_messages[channel_id] = []
-
-    # Handle timestamp logic
-    current_timestamp = int(datetime.now().timestamp())  # Get current timestamp
-    current_hour = datetime.fromtimestamp(current_timestamp).strftime("%Y-%m-%d %H:00")
-
-    # Retrieve the last timestamp if available
-    channel_messages = ui_state.all_messages[channel_id]
-    if channel_messages:
-        # Check the last entry for a timestamp
-        for entry in reversed(channel_messages):
-            if entry[0].startswith("--"):
-                last_hour = entry[0].strip("- ").strip()
-                break
-        else:
-            last_hour = None
-    else:
-        last_hour = None
-
-    # Add a new timestamp if it's a new hour
-    if last_hour != current_hour:
-        ui_state.all_messages[channel_id].append((f"-- {current_hour} --", ""))
-
-    ui_state.all_messages[channel_id].append((config.sent_message_prefix + config.ack_unknown_str + ": ", message))
+    add_new_message(channel_id, config.sent_message_prefix + config.ack_unknown_str + ": ", message)
 
     timestamp = save_message_to_db(channel_id, myid, message)
 
@@ -230,10 +203,14 @@ def send_traceroute() -> None:
     """
     Sends a RouteDiscovery protobuf to the selected node.
     """
+
+    channel_id = ui_state.node_list[ui_state.selected_node]
+    add_new_message(channel_id, f"{config.message_prefix} Sent Traceroute", "")
+
     r = mesh_pb2.RouteDiscovery()
     interface_state.interface.sendData(
         r,
-        destinationId=ui_state.node_list[ui_state.selected_node],
+        destinationId=channel_id,
         portNum=portnums_pb2.PortNum.TRACEROUTE_APP,
         wantResponse=True,
         onResponse=on_response_traceroute,
