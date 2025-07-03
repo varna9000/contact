@@ -203,10 +203,14 @@ def send_traceroute() -> None:
     """
     Sends a RouteDiscovery protobuf to the selected node.
     """
+
+    channel_id = ui_state.node_list[ui_state.selected_node]
+    add_new_message(channel_id, f"{config.message_prefix} Sent Traceroute", "")
+
     r = mesh_pb2.RouteDiscovery()
     interface_state.interface.sendData(
         r,
-        destinationId=ui_state.node_list[ui_state.selected_node],
+        destinationId=channel_id,
         portNum=portnums_pb2.PortNum.TRACEROUTE_APP,
         wantResponse=True,
         onResponse=on_response_traceroute,
