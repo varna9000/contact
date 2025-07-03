@@ -336,7 +336,7 @@ def handle_ctrl_t(stdscr: curses.window) -> None:
     curses.curs_set(0)  # Hide cursor
     contact.ui.dialog.dialog(
         stdscr,
-        f"Traceroute Sent to: {get_name_from_database(ui_state.node_list[ui_state.selected_node])}",
+        f"Traceroute Sent To: {get_name_from_database(ui_state.node_list[ui_state.selected_node])}",
         "Results will appear in messages window.\nNote: Traceroute is limited to once every 30 seconds.",
     )
     curses.curs_set(1)  # Show cursor again
