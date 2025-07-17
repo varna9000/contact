@@ -68,10 +68,6 @@ def prompt_region_if_unset(args: object) -> None:
 
 def initialize_globals(args: object) -> None:
     """Initializes interface and shared globals."""
-    interface_state.interface = initialize_interface(args)
-
-    if interface_state.interface.localNode.localConfig.lora.region == 0:
-        prompt_region_if_unset(args)
 
     interface_state.myNodeNum = get_nodeNum()
     ui_state.channel_list = get_channels()
@@ -84,55 +80,63 @@ def initialize_globals(args: object) -> None:
 
 def main(stdscr: curses.window) -> None:
     """Main entry point for the curses UI."""
+
     output_capture = io.StringIO()
-
     try:
-        with contextlib.redirect_stdout(output_capture), contextlib.redirect_stderr(output_capture):
-            setup_colors()
-            draw_splash(stdscr)
+        setup_colors()
+        draw_splash(stdscr)
 
-            args = setup_parser().parse_args()
+        args = setup_parser().parse_args()
 
-            if getattr(args, "settings", False):
-                subprocess.run([sys.executable, "-m", "contact.settings"], check=True)
-                return
+        if getattr(args, "settings", False):
+            subprocess.run([sys.executable, "-m", "contact.settings"], check=True)
+            return
 
-            logging.info("Initializing interface...")
-            with app_state.lock:
-                initialize_globals(args)
-                logging.info("Starting main UI")
+        logging.info("Initializing interface...")
+        with app_state.lock:
+            interface_state.interface = initialize_interface(args)
 
-            main_ui(stdscr)
+            if interface_state.interface.localNode.localConfig.lora.region == 0:
+                prompt_region_if_unset(args)
 
-    except Exception as e:
-        console_output = output_capture.getvalue()
-        logging.error("Uncaught exception: %s", e)
-        logging.error("Traceback: %s", traceback.format_exc())
-        logging.error("Console output:\n%s", console_output)
+            initialize_globals(args)
+            logging.info("Starting main UI")
+
+        try:
+            with contextlib.redirect_stdout(output_capture), contextlib.redirect_stderr(output_capture):
+                main_ui(stdscr)
+        except Exception:
+            console_output = output_capture.getvalue()
+            logging.error("Uncaught exception inside main_ui")
+            logging.error("Traceback:\n%s", traceback.format_exc())
+            logging.error("Console output:\n%s", console_output)
+            return
+
+    except Exception:
         raise
 
 
 def start() -> None:
-    """Launch curses wrapper and redirect logs to file."""
+    """Entry point for the application."""
 
     if "--help" in sys.argv or "-h" in sys.argv:
         setup_parser().print_help()
         sys.exit(0)
 
-    with open(config.log_file_path, "a", buffering=1) as log_f:
-        sys.stdout = log_f
-        sys.stderr = log_f
-
-        with contextlib.redirect_stdout(log_f), contextlib.redirect_stderr(log_f):
-            try:
-                curses.wrapper(main)
-            except KeyboardInterrupt:
-                logging.info("User exited with Ctrl+C")
-                sys.exit(0)
-            except Exception as e:
-                logging.error("Fatal error: %s", e)
-                logging.error("Traceback: %s", traceback.format_exc())
-                sys.exit(1)
+    try:
+        curses.wrapper(main)
+    except KeyboardInterrupt:
+        logging.info("User exited with Ctrl+C")
+        sys.exit(0)
+    except Exception as e:
+        logging.critical("Fatal error", exc_info=True)
+        try:
+            curses.endwin()
+        except Exception:
+            pass
+        print("Fatal error:", e)
+        traceback.print_exc()
+        sys.exit(1)
 
 
 if __name__ == "__main__":
