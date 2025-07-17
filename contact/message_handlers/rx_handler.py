@@ -6,8 +6,8 @@ import subprocess
 from typing import Any, Dict
 
 from contact.utilities.utils import (
-        refresh_node_list,
-        add_new_message,
+    refresh_node_list,
+    add_new_message,
 )
 from contact.ui.contact_ui import (
     draw_packetlog_win,
@@ -30,38 +30,41 @@ from contact.utilities.singleton import ui_state, interface_state, app_state
 def play_sound():
     try:
         system = platform.system()
-        sound_path = ""
-        executable = ""
+        sound_path = None
+        executable = None
 
-        if system == "Darwin": #macOS
+        if system == "Darwin":  # macOS
             sound_path = "/System/Library/Sounds/Ping.aiff"
             executable = "afplay"
-        elif system == "Linux":
-            sound_path = "/usr/share/sounds/freedesktop/stereo/complete.oga"
-            if(shutil.which("paplay")):
-                executable = "paplay"
-            else:
-                executable = "aplay"
 
-        if executable != "" and sound_path != "":
-            if os.path.exists(sound_path):
-                if shutil.which(executable):
-                    subprocess.run([executable, sound_path], check=True,
-                                   stdout=subprocess.DEVNULL, stderr = subprocess.DEVNULL)
-                    return
-                else:
-                    logging.warning("No sound player found (afplay/paplay/aplay)")
+        elif system == "Linux":
+            ogg_path = "/usr/share/sounds/freedesktop/stereo/complete.oga"
+            wav_path = "/usr/share/sounds/alsa/Front_Center.wav"  # common fallback
+
+            if shutil.which("paplay") and os.path.exists(ogg_path):
+                executable = "paplay"
+                sound_path = ogg_path
+            elif shutil.which("ffplay") and os.path.exists(ogg_path):
+                executable = "ffplay"
+                sound_path = ogg_path
+            elif shutil.which("aplay") and os.path.exists(wav_path):
+                executable = "aplay"
+                sound_path = wav_path
             else:
-                logging.warning(f"Sound file not found: {sound_path}")
+                logging.warning("No suitable sound player or sound file found on Linux")
+
+        if executable and sound_path:
+            cmd = [executable, sound_path]
+            if executable == "ffplay":
+                cmd = [executable, "-nodisp", "-autoexit", sound_path]
+
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            return
+
     except subprocess.CalledProcessError as e:
         logging.error(f"Sound playback failed: {e}")
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
-
-
-
-    # Final fallback: terminal beep
-    print("\a")
 
 
 def on_receive(packet: Dict[str, Any], interface: Any) -> None:
