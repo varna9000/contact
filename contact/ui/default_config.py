@@ -7,10 +7,60 @@ from typing import Dict
 script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.abspath(os.path.join(script_dir, os.pardir))
 
-# Paths
-json_file_path = os.path.join(parent_dir, "config.json")
-log_file_path = os.path.join(parent_dir, "client.log")
-db_file_path = os.path.join(parent_dir, "client.db")
+
+def _is_writable_dir(path: str) -> bool:
+    """
+    Return True if we can create & delete a temp file in `path`.
+    """
+    if not os.path.isdir(path):
+        return False
+    test_path = os.path.join(path, ".perm_test_tmp")
+    try:
+        with open(test_path, "w", encoding="utf-8") as _tmp:
+            _tmp.write("ok")
+        os.remove(test_path)
+        return True
+    except OSError:
+        return False
+
+
+def _get_config_root(preferred_dir: str, fallback_name: str = ".contact_client") -> str:
+    """
+    Choose a writable directory for config artifacts.
+    """
+    if _is_writable_dir(preferred_dir):
+        return preferred_dir
+
+    home = os.path.expanduser("~")
+    fallback_dir = os.path.join(home, fallback_name)
+    # Ensure the fallback exists.
+    os.makedirs(fallback_dir, exist_ok=True)
+
+    # If *that* still isn't writable, last-ditch: use a system temp dir.
+    if not _is_writable_dir(fallback_dir):
+        import tempfile
+
+        fallback_dir = tempfile.mkdtemp(prefix="contact_client_")
+
+    return fallback_dir
+
+
+# Pick the root now.
+config_root = _get_config_root(parent_dir)
+
+if config_root != parent_dir:
+    logging.debug(
+        "Parent directory %s not writable; using fallback config root %s",
+        parent_dir,
+        config_root,
+    )
+else:
+    logging.debug("Using parent directory %s for config artifacts.", config_root)
+
+# Paths (derived from the chosen root)
+json_file_path = os.path.join(config_root, "config.json")
+log_file_path = os.path.join(config_root, "client.log")
+db_file_path = os.path.join(config_root, "client.db")
 
 
 def format_json_single_line_arrays(data: Dict[str, object], indent: int = 4) -> str:
