@@ -116,7 +116,14 @@ def load_messages_from_db() -> None:
 
                     # Add messages to ui_state.all_messages grouped by hourly timestamp
                     hourly_messages = {}
-                    for user_id, message, timestamp, ack_type in db_messages:
+                    for row in db_messages:
+                        user_id, message, timestamp, ack_type = row
+
+                        # Only ack_type is allowed to be None
+                        if user_id is None or message is None or timestamp is None:
+                            logging.warning(f"Skipping row with NULL required field(s): {row}")
+                            continue
+
                         hour = datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:00")
                         if hour not in hourly_messages:
                             hourly_messages[hour] = []
@@ -130,11 +137,13 @@ def load_messages_from_db() -> None:
                             ack_str = config.nak_str
 
                         if user_id == str(interface_state.myNodeNum):
-                            formatted_message = (f"{config.sent_message_prefix}{ack_str}: ", message)
+                            sanitized_message = message.replace("\x00", "")
+                            formatted_message = (f"{config.sent_message_prefix}{ack_str}: ", sanitized_message)
                         else:
+                            sanitized_message = message.replace("\x00", "")
                             formatted_message = (
                                 f"{config.message_prefix} {get_name_from_database(int(user_id), 'short')}: ",
-                                message,
+                                sanitized_message,
                             )
 
                         hourly_messages[hour].append(formatted_message)
