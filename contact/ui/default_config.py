@@ -48,15 +48,6 @@ def _get_config_root(preferred_dir: str, fallback_name: str = ".contact_client")
 # Pick the root now.
 config_root = _get_config_root(parent_dir)
 
-if config_root != parent_dir:
-    logging.debug(
-        "Parent directory %s not writable; using fallback config root %s",
-        parent_dir,
-        config_root,
-    )
-else:
-    logging.debug("Using parent directory %s for config artifacts.", config_root)
-
 # Paths (derived from the chosen root)
 json_file_path = os.path.join(config_root, "config.json")
 log_file_path = os.path.join(config_root, "client.log")
