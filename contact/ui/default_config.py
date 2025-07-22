@@ -7,6 +7,11 @@ from typing import Dict
 script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.abspath(os.path.join(script_dir, os.pardir))
 
+# To test writting to a non-writable directory, you can uncomment the following lines:
+# mkdir /tmp/test_nonwritable
+# chmod -w /tmp/test_nonwritable
+# parent_dir = "/tmp/test_nonwritable"
+
 
 def _is_writable_dir(path: str) -> bool:
     """
