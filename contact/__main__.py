@@ -66,7 +66,7 @@ def prompt_region_if_unset(args: object) -> None:
         interface_state.interface = initialize_interface(args)
 
 
-def initialize_globals(args: object) -> None:
+def initialize_globals() -> None:
     """Initializes interface and shared globals."""
 
     interface_state.myNodeNum = get_nodeNum()
@@ -99,7 +99,7 @@ def main(stdscr: curses.window) -> None:
             if interface_state.interface.localNode.localConfig.lora.region == 0:
                 prompt_region_if_unset(args)
 
-            initialize_globals(args)
+            initialize_globals()
             logging.info("Starting main UI")
 
         try:
