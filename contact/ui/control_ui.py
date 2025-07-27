@@ -150,6 +150,15 @@ def draw_help_window(
     )
 
 
+def get_input_type_for_field(field) -> type:
+    if field.type in (field.TYPE_INT32, field.TYPE_UINT32, field.TYPE_INT64):
+        return int
+    elif field.type in (field.TYPE_FLOAT, field.TYPE_DOUBLE):
+        return float
+    else:
+        return str
+
+
 def settings_menu(stdscr: object, interface: object) -> None:
     curses.update_lines_cols()
 
@@ -268,7 +277,8 @@ def settings_menu(stdscr: object, interface: object) -> None:
                 break
 
             elif selected_option == "Export Config File":
-                filename = get_text_input("Enter a filename for the config file")
+
+                filename = get_text_input("Enter a filename for the config file", None, None)
                 if not filename:
                     logging.info("Export aborted: No filename provided.")
                     menu_state.start_index.pop()
@@ -290,7 +300,7 @@ def settings_menu(stdscr: object, interface: object) -> None:
                     with open(yaml_file_path, "w", encoding="utf-8") as file:
                         file.write(config_text)
                     logging.info(f"Config file saved to {yaml_file_path}")
-                    dialog(stdscr, "Config File Saved:", yaml_file_path)
+                    dialog("Config File Saved:", yaml_file_path)
                     menu_state.start_index.pop()
                     continue
                 except PermissionError:
@@ -306,14 +316,14 @@ def settings_menu(stdscr: object, interface: object) -> None:
 
                 # Check if folder exists and is not empty
                 if not os.path.exists(config_folder) or not any(os.listdir(config_folder)):
-                    dialog(stdscr, "", " No config files found. Export a config first.")
+                    dialog("", " No config files found. Export a config first.")
                     continue  # Return to menu
 
                 file_list = [f for f in os.listdir(config_folder) if os.path.isfile(os.path.join(config_folder, f))]
 
                 # Ensure file_list is not empty before proceeding
                 if not file_list:
-                    dialog(stdscr, "", " No config files found. Export a config first.")
+                    dialog("", " No config files found. Export a config first.")
                     continue
 
                 filename = get_list_input("Choose a config file", None, file_list)
@@ -327,7 +337,7 @@ def settings_menu(stdscr: object, interface: object) -> None:
 
             elif selected_option == "Config URL":
                 current_value = interface.localNode.getURL()
-                new_value = get_text_input(f"Config URL is currently: {current_value}")
+                new_value = get_text_input(f"Config URL is currently: {current_value}", None, str)
                 if new_value is not None:
                     current_value = new_value
                     overwrite = get_list_input(f"Are you sure you want to load this config?", None, ["Yes", "No"])
@@ -395,7 +405,9 @@ def settings_menu(stdscr: object, interface: object) -> None:
 
                 if selected_option in ["longName", "shortName", "isLicensed"]:
                     if selected_option in ["longName", "shortName"]:
-                        new_value = get_text_input(f"{human_readable_name} is currently: {current_value}")
+                        new_value = get_text_input(
+                            f"{human_readable_name} is currently: {current_value}", selected_option, None
+                        )
                         new_value = current_value if new_value is None else new_value
                         menu_state.current_menu[selected_option] = (field, new_value)
 
@@ -414,7 +426,9 @@ def settings_menu(stdscr: object, interface: object) -> None:
                     menu_state.start_index.pop()
 
                 elif selected_option in ["latitude", "longitude", "altitude"]:
-                    new_value = get_text_input(f"{human_readable_name} is currently: {current_value}")
+                    new_value = get_text_input(
+                        f"{human_readable_name} is currently: {current_value}", selected_option, float
+                    )
                     new_value = current_value if new_value is None else new_value
                     menu_state.current_menu[selected_option] = (field, new_value)
 
@@ -453,17 +467,26 @@ def settings_menu(stdscr: object, interface: object) -> None:
                     menu_state.start_index.pop()
 
                 elif field.type == 13:  # Field type 13 corresponds to UINT32
-                    new_value = get_text_input(f"{human_readable_name} is currently: {current_value}")
+                    input_type = get_input_type_for_field(field)
+                    new_value = get_text_input(
+                        f"{human_readable_name} is currently: {current_value}", selected_option, input_type
+                    )
                     new_value = current_value if new_value is None else int(new_value)
                     menu_state.start_index.pop()
 
                 elif field.type == 2:  # Field type 13 corresponds to INT64
-                    new_value = get_text_input(f"{human_readable_name} is currently: {current_value}")
+                    input_type = get_input_type_for_field(field)
+                    new_value = get_text_input(
+                        f"{human_readable_name} is currently: {current_value}", selected_option, input_type
+                    )
                     new_value = current_value if new_value is None else float(new_value)
                     menu_state.start_index.pop()
 
                 else:  # Handle other field types
-                    new_value = get_text_input(f"{human_readable_name} is currently: {current_value}")
+                    input_type = get_input_type_for_field(field)
+                    new_value = get_text_input(
+                        f"{human_readable_name} is currently: {current_value}", selected_option, input_type
+                    )
                     new_value = current_value if new_value is None else new_value
                     menu_state.start_index.pop()
 
