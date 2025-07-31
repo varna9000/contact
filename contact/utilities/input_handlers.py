@@ -8,6 +8,7 @@ from contact.ui.colors import get_color
 from contact.ui.nav_utils import move_highlight, draw_arrows, wrap_text
 from contact.ui.dialog import dialog
 from contact.utilities.validation_rules import get_validation_for
+from contact.utilities.singleton import menu_state
 
 
 def invalid_input(window: curses.window, message: str, redraw_func: Optional[callable] = None) -> None:
@@ -53,6 +54,7 @@ def get_text_input(prompt: str, selected_config: str, input_type: str) -> Option
     start_x = (curses.COLS - width) // 2
 
     input_win = curses.newwin(height, width, start_y, start_x)
+    input_win.timeout(200)
     input_win.bkgd(get_color("background"))
     input_win.attrset(get_color("window_frame"))
     input_win.border()
@@ -90,12 +92,20 @@ def get_text_input(prompt: str, selected_config: str, input_type: str) -> Option
     first_line_width = input_width - len(prompt_text)
 
     while True:
-        key = input_win.get_wch()
+        if menu_state.need_redraw:
+            menu_state.need_redraw = False
+            redraw_input_win()
+
+        try:
+            key = input_win.get_wch()
+        except curses.error:
+            continue
 
         if key == chr(27) or key == curses.KEY_LEFT:
             input_win.erase()
             input_win.refresh()
             curses.curs_set(0)
+            menu_state.need_redraw = True
             return None
 
         elif key in (chr(curses.KEY_ENTER), chr(10), chr(13)):
