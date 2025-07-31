@@ -21,9 +21,7 @@ from contact.ui.dialog import dialog
 from contact.ui.menus import generate_menu_from_protobuf
 from contact.ui.nav_utils import move_highlight, draw_arrows, update_help_window
 from contact.ui.user_config import json_editor
-from contact.ui.ui_state import MenuState
-
-menu_state = MenuState()
+from contact.utilities.singleton import menu_state
 
 # Constants
 width = 80
@@ -47,7 +45,9 @@ config_folder = os.path.abspath(config.node_configs_file_path)
 field_mapping, help_text = parse_ini_file(translation_file)
 
 
-def display_menu(menu_state: MenuState) -> tuple[object, object]:
+
+def display_menu() -> tuple[object, object]:  # curses.window or pad types
+
 
     min_help_window_height = 6
     num_items = len(menu_state.current_menu) + (1 if menu_state.show_save_option else 0)
@@ -108,7 +108,7 @@ def display_menu(menu_state: MenuState) -> tuple[object, object]:
         )
 
     # Draw help window with dynamically updated max_help_lines
-    draw_help_window(start_y, start_x, menu_height, max_help_lines, transformed_path, menu_state)
+    draw_help_window(start_y, start_x, menu_height, max_help_lines, transformed_path)
 
     menu_win.refresh()
     menu_pad.refresh(
@@ -134,7 +134,6 @@ def draw_help_window(
     menu_height: int,
     max_help_lines: int,
     transformed_path: List[str],
-    menu_state: MenuState,
 ) -> None:
 
     global help_win
@@ -170,29 +169,32 @@ def settings_menu(stdscr: object, interface: object) -> None:
 
     modified_settings = {}
 
-    need_redraw = True
+    menu_state.need_redraw = True
     menu_state.show_save_option = False
 
     while True:
-        if need_redraw:
+        if menu_state.need_redraw:
+            menu_state.need_redraw = False
             options = list(menu_state.current_menu.keys())
 
+            # Determine if save option should be shown
+            path = menu_state.menu_path
             menu_state.show_save_option = (
-                (
-                    len(menu_state.menu_path) > 2
-                    and ("Radio Settings" in menu_state.menu_path or "Module Settings" in menu_state.menu_path)
-                )
-                or (len(menu_state.menu_path) == 2 and "User Settings" in menu_state.menu_path)
-                or (len(menu_state.menu_path) == 3 and "Channels" in menu_state.menu_path)
+                (len(path) > 2 and ("Radio Settings" in path or "Module Settings" in path))
+                or (len(path) == 2 and "User Settings" in path)
+                or (len(path) == 3 and "Channels" in path)
             )
 
             # Display the menu
-            menu_win, menu_pad = display_menu(menu_state)
+            menu_win, menu_pad = display_menu()
 
-            need_redraw = False
+        if menu_win is None:
+            continue  # Skip if menu_win is not initialized
 
-        # Capture user input
+        menu_win.timeout(200)  # wait up to 200 ms for a keypress (or less if key is pressed)
         key = menu_win.getch()
+        if key == -1:
+            continue
 
         max_index = len(options) + (1 if menu_state.show_save_option else 0) - 1
         # max_help_lines = 4
@@ -226,7 +228,7 @@ def settings_menu(stdscr: object, interface: object) -> None:
             )
 
         elif key == curses.KEY_RESIZE:
-            need_redraw = True
+            menu_state.need_redraw = True
             curses.update_lines_cols()
 
             menu_win.erase()
@@ -250,7 +252,7 @@ def settings_menu(stdscr: object, interface: object) -> None:
             )
 
         elif key == curses.KEY_RIGHT or key == ord("\n"):
-            need_redraw = True
+            menu_state.need_redraw = True
             menu_state.start_index.append(0)
             menu_win.erase()
             help_win.erase()
@@ -392,7 +394,7 @@ def settings_menu(stdscr: object, interface: object) -> None:
                 menu_state.start_index.pop()
                 menu_state.selected_index = 4
                 continue
-                # need_redraw = True
+                # menu_state.need_redraw = True
 
             field_info = menu_state.current_menu.get(selected_option)
             if isinstance(field_info, tuple):
@@ -511,7 +513,7 @@ def settings_menu(stdscr: object, interface: object) -> None:
                 menu_state.selected_index = 0
 
         elif key == curses.KEY_LEFT:
-            need_redraw = True
+            menu_state.need_redraw = True
 
             menu_win.erase()
             help_win.erase()

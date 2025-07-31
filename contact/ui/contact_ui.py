@@ -13,7 +13,7 @@ from contact.utilities.input_handlers import get_list_input
 import contact.ui.default_config as config
 import contact.ui.dialog
 from contact.ui.nav_utils import move_main_highlight, draw_main_arrows, get_msg_window_lines, wrap_text
-from contact.utilities.singleton import ui_state, interface_state
+from contact.utilities.singleton import ui_state, interface_state, menu_state
 
 
 def handle_resize(stdscr: curses.window, firstrun: bool) -> None:
@@ -341,7 +341,6 @@ def handle_ctrl_t(stdscr: curses.window) -> None:
     send_traceroute()
     curses.curs_set(0)  # Hide cursor
     contact.ui.dialog.dialog(
-        stdscr,
         f"Traceroute Sent To: {get_name_from_database(ui_state.node_list[ui_state.selected_node])}",
         "Results will appear in messages window.\nNote: Traceroute is limited to once every 30 seconds.",
     )
@@ -364,7 +363,10 @@ def handle_backspace(entry_win: curses.window, input_text: str) -> str:
 def handle_backtick(stdscr: curses.window) -> None:
     """Handle backtick key events to open the settings menu."""
     curses.curs_set(0)
+    previous_window = ui_state.current_window
+    ui_state.current_window = 4
     settings_menu(stdscr, interface_state.interface)
+    ui_state.current_window = previous_window
     curses.curs_set(1)
     refresh_node_list()
     handle_resize(stdscr, False)
@@ -599,6 +601,8 @@ def draw_messages_window(scroll_to_bottom: bool = False) -> None:
     refresh_pad(1)
 
     draw_packetlog_win()
+    if ui_state.current_window == 4:
+        menu_state.need_redraw = True
 
 
 def draw_node_list() -> None:
