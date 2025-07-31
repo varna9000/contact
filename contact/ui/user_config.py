@@ -75,34 +75,57 @@ def edit_value(key: str, current_value: str) -> str:
     user_input = ""
     input_position = (7, 13)  # Tuple for row and column
     row, col = input_position  # Unpack tuple
+
     while True:
-        visible_text = user_input[scroll_offset : scroll_offset + input_width]  # Only show what fits
-        edit_win.addstr(row, col, " " * input_width, get_color("settings_default"))  # Clear previous text
-        edit_win.addstr(row, col, visible_text, get_color("settings_default"))  # Display text
+        if menu_state.need_redraw:
+            curses.update_lines_cols()
+            menu_state.need_redraw = False
+
+            # Re-create the window to fully reset state
+            edit_win = curses.newwin(height, width, start_y, start_x)
+            edit_win.timeout(200)
+            edit_win.bkgd(get_color("background"))
+            edit_win.attrset(get_color("window_frame"))
+            edit_win.border()
+
+            # Redraw static content
+            edit_win.addstr(1, 2, f"Editing {key}", get_color("settings_default", bold=True))
+            edit_win.addstr(3, 2, "Current Value:", get_color("settings_default"))
+            for i, line in enumerate(wrapped_lines[:4]):
+                edit_win.addstr(4 + i, 2, line, get_color("settings_default"))
+            edit_win.addstr(7, 2, "New Value: ", get_color("settings_default"))
+
+        visible_text = user_input[scroll_offset : scroll_offset + input_width]
+        edit_win.addstr(row, col, " " * input_width, get_color("settings_default"))
+        edit_win.addstr(row, col, visible_text, get_color("settings_default"))
         edit_win.refresh()
 
-        edit_win.move(row, col + min(len(user_input) - scroll_offset, input_width))  # Adjust cursor position
-        key = edit_win.get_wch()
+        edit_win.move(row, col + min(len(user_input) - scroll_offset, input_width))
 
-        if key in (chr(27), curses.KEY_LEFT):  # ESC or Left Arrow
+        try:
+            key = edit_win.get_wch()
+        except curses.error:
+            continue  # window not ready — skip this loop
+
+        if key in (chr(27), curses.KEY_LEFT):
             curses.curs_set(0)
-            return current_value  # Exit without returning a value
+            return current_value
 
         elif key in (chr(curses.KEY_ENTER), chr(10), chr(13)):
             break
 
-        elif key in (curses.KEY_BACKSPACE, chr(127)):  # Backspace
-            if user_input:  # Only process if there's something to delete
+        elif key in (curses.KEY_BACKSPACE, chr(127)):
+            if user_input:
                 user_input = user_input[:-1]
                 if scroll_offset > 0 and len(user_input) < scroll_offset + input_width:
-                    scroll_offset -= 1  # Move back if text is shorter than scrolled area
+                    scroll_offset -= 1
         else:
             if isinstance(key, str):
                 user_input += key
             else:
                 user_input += chr(key)
 
-            if len(user_input) > input_width:  # Scroll if input exceeds visible area
+            if len(user_input) > input_width:
                 scroll_offset += 1
 
     curses.curs_set(0)
@@ -218,12 +241,14 @@ def json_editor(stdscr: curses.window, menu_state: Any) -> None:
     menu_state.need_redraw = True
 
     while True:
-        if menu_state.need_redraw == True:
+        if menu_state.need_redraw:
+            menu_state.need_redraw = False
             menu_win, menu_pad, options = display_menu()
             menu_win.refresh()
-            menu_state.need_redraw = False
 
         max_index = len(options) + (1 if menu_state.show_save_option else 0) - 1
+
+        menu_win.timeout(200)
         key = menu_win.getch()
 
         if key == curses.KEY_UP:
@@ -338,7 +363,6 @@ def save_json(file_path: str, data: Dict[str, Any]) -> None:
 def main(stdscr: curses.window) -> None:
     from contact.ui.ui_state import MenuState
 
-    menu_state = MenuState()
     if len(menu_state.menu_path) == 0:
         menu_state.menu_path = ["App Settings"]  # Initialize if not set
 

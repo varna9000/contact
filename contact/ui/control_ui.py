@@ -45,9 +45,7 @@ config_folder = os.path.abspath(config.node_configs_file_path)
 field_mapping, help_text = parse_ini_file(translation_file)
 
 
-
 def display_menu() -> tuple[object, object]:  # curses.window or pad types
-
 
     min_help_window_height = 6
     num_items = len(menu_state.current_menu) + (1 if menu_state.show_save_option else 0)
@@ -394,7 +392,6 @@ def settings_menu(stdscr: object, interface: object) -> None:
                 menu_state.start_index.pop()
                 menu_state.selected_index = 4
                 continue
-                # menu_state.need_redraw = True
 
             field_info = menu_state.current_menu.get(selected_option)
             if isinstance(field_info, tuple):
