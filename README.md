@@ -67,3 +67,9 @@ To quickly connect to localhost, use:
 ```sh
 contact -t
 ```
+## Install in development (editable) mode:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+```
