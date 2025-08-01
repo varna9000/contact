@@ -246,11 +246,11 @@ def get_admin_key_input(current_value: List[bytes]) -> Optional[List[str]]:
     start_y = (curses.LINES - height) // 2
     start_x = (curses.COLS - width) // 2
 
-    repeated_win = curses.newwin(height, width, start_y, start_x)
-    repeated_win.timeout(200)
-    repeated_win.bkgd(get_color("background"))
-    repeated_win.attrset(get_color("window_frame"))
-    repeated_win.keypad(True)  # Enable keypad for special keys
+    admin_key_win = curses.newwin(height, width, start_y, start_x)
+    admin_key_win.timeout(200)
+    admin_key_win.bkgd(get_color("background"))
+    admin_key_win.attrset(get_color("window_frame"))
+    admin_key_win.keypad(True)  # Enable keypad for special keys
 
     curses.echo()
     curses.curs_set(1)
@@ -261,32 +261,32 @@ def get_admin_key_input(current_value: List[bytes]) -> Optional[List[str]]:
     invalid_input = ""
 
     while True:
-        repeated_win.erase()
-        repeated_win.border()
-        repeated_win.addstr(1, 2, "Edit up to 3 Admin Keys:", get_color("settings_default", bold=True))
+        admin_key_win.erase()
+        admin_key_win.border()
+        admin_key_win.addstr(1, 2, "Edit up to 3 Admin Keys:", get_color("settings_default", bold=True))
 
         # Display current values, allowing editing
         for i, line in enumerate(user_values):
             prefix = "→ " if i == cursor_pos else "  "  # Highlight the current line
-            repeated_win.addstr(
+            admin_key_win.addstr(
                 3 + i, 2, f"{prefix}Admin Key {i + 1}: ", get_color("settings_default", bold=(i == cursor_pos))
             )
-            repeated_win.addstr(3 + i, 18, line)  # Align text for easier editing
+            admin_key_win.addstr(3 + i, 18, line)  # Align text for easier editing
 
         # Move cursor to the correct position inside the field
         curses.curs_set(1)
-        repeated_win.move(3 + cursor_pos, 18 + len(user_values[cursor_pos]))  # Position cursor at end of text
+        admin_key_win.move(3 + cursor_pos, 18 + len(user_values[cursor_pos]))  # Position cursor at end of text
 
         # Show error message if needed
         if invalid_input:
-            repeated_win.addstr(7, 2, invalid_input, get_color("settings_default", bold=True))
+            admin_key_win.addstr(7, 2, invalid_input, get_color("settings_default", bold=True))
 
-        repeated_win.refresh()
-        key = repeated_win.getch()
+        admin_key_win.refresh()
+        key = admin_key_win.getch()
 
         if key == 27 or key == curses.KEY_LEFT:  # Escape or Left Arrow -> Cancel and return original
-            repeated_win.erase()
-            repeated_win.refresh()
+            admin_key_win.erase()
+            admin_key_win.refresh()
             curses.noecho()
             curses.curs_set(0)
             menu_state.need_redraw = True
