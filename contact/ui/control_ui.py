@@ -303,6 +303,7 @@ def settings_menu(stdscr: object, interface: object) -> None:
                         file.write(config_text)
                     logging.info(f"Config file saved to {yaml_file_path}")
                     dialog("Config File Saved:", yaml_file_path)
+                    menu_state.need_redraw = True
                     menu_state.start_index.pop()
                     continue
                 except PermissionError:
@@ -319,6 +320,7 @@ def settings_menu(stdscr: object, interface: object) -> None:
                 # Check if folder exists and is not empty
                 if not os.path.exists(config_folder) or not any(os.listdir(config_folder)):
                     dialog("", " No config files found. Export a config first.")
+                    menu_state.need_redraw = True
                     continue  # Return to menu
 
                 file_list = [f for f in os.listdir(config_folder) if os.path.isfile(os.path.join(config_folder, f))]
@@ -326,6 +328,7 @@ def settings_menu(stdscr: object, interface: object) -> None:
                 # Ensure file_list is not empty before proceeding
                 if not file_list:
                     dialog("", " No config files found. Export a config first.")
+                    menu_state.need_redraw = True
                     continue
 
                 filename = get_list_input("Choose a config file", None, file_list)
