@@ -109,6 +109,8 @@ def get_text_input(prompt: str, selected_config: str, input_type: str) -> Option
             return None
 
         elif key in (chr(curses.KEY_ENTER), chr(10), chr(13)):
+            menu_state.need_redraw = True
+
             if not user_input.strip():
                 invalid_input(input_win, "Value cannot be empty.", redraw_func=redraw_input_win)
                 continue
@@ -293,10 +295,10 @@ def get_admin_key_input(current_value: List[bytes]) -> Optional[List[str]]:
             return None
 
         elif key == ord("\n"):  # Enter key to save and return
+            menu_state.need_redraw = True
             if all(is_valid_base64(val) for val in user_values):  # Ensure all values are valid Base64 and 32 bytes
                 curses.noecho()
                 curses.curs_set(0)
-                menu_state.need_redraw = True
                 return user_values  # Return the edited Base64 values
             else:
                 invalid_input = "Error: Each key must be valid Base64 and 32 bytes long!"
@@ -446,16 +448,15 @@ def get_fixed32_input(current_value: int) -> int:
 
         elif key in ("\n", curses.KEY_ENTER):
             octets = user_input.split(".")
+            menu_state.need_redraw = True
             if len(octets) == 4 and all(octet.isdigit() and 0 <= int(octet) <= 255 for octet in octets):
                 curses.noecho()
                 curses.curs_set(0)
-                menu_state.need_redraw = True
                 return int(ipaddress.ip_address(user_input))
             else:
                 fixed32_win.addstr(7, 2, "Invalid IP address. Try again.", get_color("settings_default", bold=True))
                 fixed32_win.refresh()
                 curses.napms(1500)
-                menu_state.need_redraw = True
                 user_input = ""
 
         elif key in (curses.KEY_BACKSPACE, 127):
@@ -470,7 +471,15 @@ def get_fixed32_input(current_value: int) -> int:
                 pass  # Ignore unprintable inputs
 
 
-def get_list_input(prompt: str, current_option: Optional[str], list_options: List[str]) -> Optional[str]:
+from typing import List, Optional  # ensure Optional is imported
+
+
+def get_list_input(
+    prompt: str, current_option: Optional[str], list_options: List[str], mandatory: bool = False
+) -> Optional[str]:
+    """
+    List selector.
+    """
     selected_index = list_options.index(current_option) if current_option in list_options else 0
 
     height = min(len(list_options) + 5, curses.LINES)
@@ -495,11 +504,9 @@ def get_list_input(prompt: str, current_option: Optional[str], list_options: Lis
         list_win.border()
         list_win.addstr(1, 2, prompt, get_color("settings_default", bold=True))
 
-        for idx, color in enumerate(list_options):
-            if idx == selected_index:
-                list_pad.addstr(idx, 0, color.ljust(width - 8), get_color("settings_default", reverse=True))
-            else:
-                list_pad.addstr(idx, 0, color.ljust(width - 8), get_color("settings_default"))
+        for idx, item in enumerate(list_options):
+            color = get_color("settings_default", reverse=(idx == selected_index))
+            list_pad.addstr(idx, 0, item.ljust(width - 8), color)
 
         list_win.refresh()
         list_pad.refresh(
@@ -510,7 +517,6 @@ def get_list_input(prompt: str, current_option: Optional[str], list_options: Lis
             list_win.getbegyx()[0] + list_win.getmaxyx()[0] - 2,
             list_win.getbegyx()[1] + list_win.getmaxyx()[1] - 4,
         )
-
         draw_arrows(list_win, visible_height, max_index, [0], show_save_option=False)
 
     # Initial draw
@@ -524,22 +530,27 @@ def get_list_input(prompt: str, current_option: Optional[str], list_options: Lis
         try:
             key = list_win.getch()
         except curses.error:
-            continue  # Graceful timeout handling
+            continue
 
         if key == curses.KEY_UP:
             old_selected_index = selected_index
             selected_index = max(0, selected_index - 1)
             move_highlight(old_selected_index, list_options, list_win, list_pad, selected_index=selected_index)
+
         elif key == curses.KEY_DOWN:
             old_selected_index = selected_index
             selected_index = min(len(list_options) - 1, selected_index + 1)
             move_highlight(old_selected_index, list_options, list_win, list_pad, selected_index=selected_index)
-        elif key == ord("\n"):  # Enter key
+
+        elif key == ord("\n"):  # Enter
             list_win.clear()
             list_win.refresh()
             menu_state.need_redraw = True
             return list_options[selected_index]
-        elif key == 27 or key == curses.KEY_LEFT:  # ESC or Left Arrow
+
+        elif key == 27 or key == curses.KEY_LEFT:  # ESC or Left
+            if mandatory:
+                continue
             list_win.clear()
             list_win.refresh()
             menu_state.need_redraw = True

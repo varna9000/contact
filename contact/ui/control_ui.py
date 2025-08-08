@@ -303,6 +303,7 @@ def settings_menu(stdscr: object, interface: object) -> None:
                         file.write(config_text)
                     logging.info(f"Config file saved to {yaml_file_path}")
                     dialog("Config File Saved:", yaml_file_path)
+                    menu_state.need_redraw = True
                     menu_state.start_index.pop()
                     continue
                 except PermissionError:
@@ -319,6 +320,7 @@ def settings_menu(stdscr: object, interface: object) -> None:
                 # Check if folder exists and is not empty
                 if not os.path.exists(config_folder) or not any(os.listdir(config_folder)):
                     dialog("", " No config files found. Export a config first.")
+                    menu_state.need_redraw = True
                     continue  # Return to menu
 
                 file_list = [f for f in os.listdir(config_folder) if os.path.isfile(os.path.join(config_folder, f))]
@@ -326,6 +328,7 @@ def settings_menu(stdscr: object, interface: object) -> None:
                 # Ensure file_list is not empty before proceeding
                 if not file_list:
                     dialog("", " No config files found. Export a config first.")
+                    menu_state.need_redraw = True
                     continue
 
                 filename = get_list_input("Choose a config file", None, file_list)
@@ -510,6 +513,27 @@ def settings_menu(stdscr: object, interface: object) -> None:
                 menu_state.selected_index = 0
 
         elif key == curses.KEY_LEFT:
+
+            # If we are at the main menu and there are unsaved changes, prompt to save
+            if len(menu_state.menu_path) == 3 and modified_settings:
+
+                current_section = menu_state.menu_path[-1]
+                save_prompt = get_list_input(
+                    f"You have unsaved changes in {current_section}. Save before exiting?",
+                    None,
+                    ["Yes", "No", "Cancel"],
+                    mandatory=True,
+                )
+                if save_prompt == "Cancel":
+                    continue  # Stay in the menu without doing anything
+                elif save_prompt == "Yes":
+                    save_changes(interface, modified_settings, menu_state)
+                    logging.info("Changes Saved")
+
+                modified_settings.clear()
+                menu = rebuild_menu_at_current_path(interface, menu_state)
+                pass
+
             menu_state.need_redraw = True
 
             menu_win.erase()
@@ -521,8 +545,8 @@ def settings_menu(stdscr: object, interface: object) -> None:
             menu_win.refresh()
             help_win.refresh()
 
-            if len(menu_state.menu_path) < 2:
-                modified_settings.clear()
+            # if len(menu_state.menu_path) < 2:
+            #     modified_settings.clear()
 
             # Navigate back to the previous menu
             if len(menu_state.menu_path) > 1:
@@ -537,6 +561,16 @@ def settings_menu(stdscr: object, interface: object) -> None:
             menu_win.erase()
             menu_win.refresh()
             break
+
+
+def rebuild_menu_at_current_path(interface, menu_state):
+    """Rebuild menus from the device and re-point current_menu to the same path."""
+    new_menu = generate_menu_from_protobuf(interface)
+    cur = new_menu["Main Menu"]
+    for step in menu_state.menu_path[1:]:
+        cur = cur.get(step, {})
+    menu_state.current_menu = cur
+    return new_menu
 
 
 def set_region(interface: object) -> None:

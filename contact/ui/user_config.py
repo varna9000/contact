@@ -215,6 +215,7 @@ def display_menu() -> tuple[Any, Any, List[str]]:
 def json_editor(stdscr: curses.window, menu_state: Any) -> None:
 
     menu_state.selected_index = 0  # Track the selected option
+    made_changes = False  # Track if any changes were made
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.abspath(os.path.join(script_dir, os.pardir))
@@ -297,11 +298,14 @@ def json_editor(stdscr: curses.window, menu_state: Any) -> None:
 
                 if isinstance(selected_data, list) and len(selected_data) == 2:
                     # Edit color pair
+                    old = selected_data
                     new_value = edit_color_pair(selected_key, selected_data)
                     menu_state.menu_path.pop()
                     menu_state.start_index.pop()
                     menu_state.menu_index.pop()
                     menu_state.current_menu[selected_key] = new_value
+                    if new_value != old:
+                        made_changes = True
 
                 elif isinstance(selected_data, (dict, list)):
                     # Navigate into nested data
@@ -310,12 +314,15 @@ def json_editor(stdscr: curses.window, menu_state: Any) -> None:
 
                 else:
                     # General value editing
+                    old = selected_data
                     new_value = edit_value(selected_key, selected_data)
                     menu_state.menu_path.pop()
                     menu_state.menu_index.pop()
                     menu_state.start_index.pop()
                     menu_state.current_menu[selected_key] = new_value
                     menu_state.need_redraw = True
+                    if new_value != old:
+                        made_changes = True
 
             else:
                 # Save button selected
@@ -347,6 +354,19 @@ def json_editor(stdscr: curses.window, menu_state: Any) -> None:
 
             else:
                 # Exit the editor
+                if made_changes:
+                    save_prompt = get_list_input(
+                        "You have unsaved changes. Save before exiting?",
+                        None,
+                        ["Yes", "No", "Cancel"],
+                        mandatory=True,
+                    )
+                    if save_prompt == "Cancel":
+                        continue  # Stay in the menu without doing anything
+                    elif save_prompt == "Yes":
+                        save_json(file_path, data)
+                        made_changes = False
+
                 menu_win.clear()
                 menu_win.refresh()
 
