@@ -471,7 +471,15 @@ def get_fixed32_input(current_value: int) -> int:
                 pass  # Ignore unprintable inputs
 
 
-def get_list_input(prompt: str, current_option: Optional[str], list_options: List[str]) -> Optional[str]:
+from typing import List, Optional  # ensure Optional is imported
+
+
+def get_list_input(
+    prompt: str, current_option: Optional[str], list_options: List[str], mandatory: bool = False
+) -> Optional[str]:
+    """
+    List selector.
+    """
     selected_index = list_options.index(current_option) if current_option in list_options else 0
 
     height = min(len(list_options) + 5, curses.LINES)
@@ -496,11 +504,9 @@ def get_list_input(prompt: str, current_option: Optional[str], list_options: Lis
         list_win.border()
         list_win.addstr(1, 2, prompt, get_color("settings_default", bold=True))
 
-        for idx, color in enumerate(list_options):
-            if idx == selected_index:
-                list_pad.addstr(idx, 0, color.ljust(width - 8), get_color("settings_default", reverse=True))
-            else:
-                list_pad.addstr(idx, 0, color.ljust(width - 8), get_color("settings_default"))
+        for idx, item in enumerate(list_options):
+            color = get_color("settings_default", reverse=(idx == selected_index))
+            list_pad.addstr(idx, 0, item.ljust(width - 8), color)
 
         list_win.refresh()
         list_pad.refresh(
@@ -511,7 +517,6 @@ def get_list_input(prompt: str, current_option: Optional[str], list_options: Lis
             list_win.getbegyx()[0] + list_win.getmaxyx()[0] - 2,
             list_win.getbegyx()[1] + list_win.getmaxyx()[1] - 4,
         )
-
         draw_arrows(list_win, visible_height, max_index, [0], show_save_option=False)
 
     # Initial draw
@@ -525,22 +530,27 @@ def get_list_input(prompt: str, current_option: Optional[str], list_options: Lis
         try:
             key = list_win.getch()
         except curses.error:
-            continue  # Graceful timeout handling
+            continue
 
         if key == curses.KEY_UP:
             old_selected_index = selected_index
             selected_index = max(0, selected_index - 1)
             move_highlight(old_selected_index, list_options, list_win, list_pad, selected_index=selected_index)
+
         elif key == curses.KEY_DOWN:
             old_selected_index = selected_index
             selected_index = min(len(list_options) - 1, selected_index + 1)
             move_highlight(old_selected_index, list_options, list_win, list_pad, selected_index=selected_index)
-        elif key == ord("\n"):  # Enter key
+
+        elif key == ord("\n"):  # Enter
             list_win.clear()
             list_win.refresh()
             menu_state.need_redraw = True
             return list_options[selected_index]
-        elif key == 27 or key == curses.KEY_LEFT:  # ESC or Left Arrow
+
+        elif key == 27 or key == curses.KEY_LEFT:  # ESC or Left
+            if mandatory:
+                continue
             list_win.clear()
             list_win.refresh()
             menu_state.need_redraw = True

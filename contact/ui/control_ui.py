@@ -519,6 +519,7 @@ def settings_menu(stdscr: object, interface: object) -> None:
                     f"You have unsaved changes in {current_section}. Save before exiting?",
                     None,
                     ["Yes", "No", "Cancel"],
+                    mandatory=True,
                 )
                 if save_prompt == "Cancel":
                     continue  # Stay in the menu without doing anything
