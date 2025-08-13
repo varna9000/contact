@@ -6,6 +6,13 @@
 ```bash
 pip install contact
 ```
+> [!NOTE]
+> Windows users must also install:
+> 
+> ```powershell
+> pip install windows-curses
+> ```
+> because the built-in curses module is not available on Windows.
 
 This Python curses client for Meshtastic is a terminal-based client designed to manage device settings, enable mesh chat communication, and handle configuration backups and restores.
 
@@ -63,6 +70,7 @@ If no connection arguments are specified, the client will attempt a serial conne
 contact --port /dev/ttyUSB0
 contact --host 192.168.1.1
 contact --ble BlAddressOfDevice
+contact --port COM3
 ```
 To quickly connect to localhost, use:
 ```sh
