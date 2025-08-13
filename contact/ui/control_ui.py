@@ -117,6 +117,7 @@ def display_menu() -> tuple[object, object]:  # curses.window or pad types
         menu_win.getbegyx()[0] + 3 + menu_win.getmaxyx()[0] - 5 - (2 if menu_state.show_save_option else 0),
         menu_win.getbegyx()[1] + menu_win.getmaxyx()[1] - 4,
     )
+    curses.curs_set(0)
 
     max_index = num_items + (1 if menu_state.show_save_option else 0) - 1
     visible_height = menu_win.getmaxyx()[0] - 5 - (2 if menu_state.show_save_option else 0)
