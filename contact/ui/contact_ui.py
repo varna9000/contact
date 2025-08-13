@@ -653,6 +653,9 @@ def draw_node_list() -> None:
     curses.curs_set(1)
     entry_win.refresh()
 
+    if ui_state.current_window == 4:
+        menu_state.need_redraw = True
+
 
 def select_channel(idx: int) -> None:
     """Select a channel by index and update the UI state accordingly."""
