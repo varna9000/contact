@@ -32,6 +32,10 @@ All messages will saved in a SQLite DB and restored upon relaunch of the app.  Y
 
 By navigating to Settings -> App Settings, you may customize your UI's icons, colors, and more!
 
+For smaller displays you may wish to enable `single_pane_mode`:
+
+<img width="486" height="194" alt="Screenshot 2025-08-22 at 11 15 54 PM" src="https://github.com/user-attachments/assets/447c5d30-0850-4a4f-b0d4-976e4c5e329d" />
+
 ## Commands
 
 - `↑→↓←` = Navigate around the UI.
