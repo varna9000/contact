@@ -23,11 +23,20 @@ from contact.ui.nav_utils import move_highlight, draw_arrows, update_help_window
 from contact.ui.user_config import json_editor
 from contact.utilities.singleton import menu_state
 
-# Constants
-width = 80
+# Setup Variables
+MAX_MENU_WIDTH = 80  # desired max; will shrink on small terminals
 save_option = "Save Changes"
 max_help_lines = 0
 help_win = None
+sensitive_settings = ["Reboot", "Reset Node DB", "Shutdown", "Factory Reset"]
+
+
+# Compute the effective menu width for the current terminal
+def get_menu_width() -> int:
+    # Leave at least 2 columns for borders; clamp to >= 20 for usability
+    return max(20, min(MAX_MENU_WIDTH, curses.COLS - 2))
+
+
 sensitive_settings = ["Reboot", "Reset Node DB", "Shutdown", "Factory Reset"]
 
 # Get the parent directory of the script
@@ -45,35 +54,39 @@ config_folder = os.path.abspath(config.node_configs_file_path)
 field_mapping, help_text = parse_ini_file(translation_file)
 
 
-def display_menu() -> tuple[object, object]:  # curses.window or pad types
+def display_menu() -> tuple[object, object]:
+    if help_win:
+        min_help_window_height = 6
+    else:
+        min_help_window_height = 0
 
-    min_help_window_height = 6
     num_items = len(menu_state.current_menu) + (1 if menu_state.show_save_option else 0)
 
     # Determine the available height for the menu
     max_menu_height = curses.LINES
     menu_height = min(max_menu_height - min_help_window_height, num_items + 5)
+    w = get_menu_width()
     start_y = (curses.LINES - menu_height) // 2 - (min_help_window_height // 2)
-    start_x = (curses.COLS - width) // 2
+    start_x = (curses.COLS - w) // 2
 
     # Calculate remaining space for help window
     global max_help_lines
     remaining_space = curses.LINES - (start_y + menu_height + 2)  # +2 for padding
     max_help_lines = max(remaining_space, 1)  # Ensure at least 1 lines for help
 
-    menu_win = curses.newwin(menu_height, width, start_y, start_x)
+    menu_win = curses.newwin(menu_height, w, start_y, start_x)
     menu_win.erase()
     menu_win.bkgd(get_color("background"))
     menu_win.attrset(get_color("window_frame"))
     menu_win.border()
     menu_win.keypad(True)
 
-    menu_pad = curses.newpad(len(menu_state.current_menu) + 1, width - 8)
+    menu_pad = curses.newpad(len(menu_state.current_menu) + 1, w - 8)
     menu_pad.bkgd(get_color("background"))
 
     header = " > ".join(word.title() for word in menu_state.menu_path)
-    if len(header) > width - 4:
-        header = header[: width - 7] + "..."
+    if len(header) > w - 4:
+        header = header[: w - 7] + "..."
     menu_win.addstr(1, 2, header, get_color("settings_breadcrumbs", bold=True))
 
     transformed_path = transform_menu_path(menu_state.menu_path)
@@ -84,15 +97,15 @@ def display_menu() -> tuple[object, object]:  # curses.window or pad types
         full_key = ".".join(transformed_path + [option])
         display_name = field_mapping.get(full_key, option)
 
-        display_option = f"{display_name}"[: width // 2 - 2]
-        display_value = f"{current_value}"[: width // 2 - 4]
+        display_option = f"{display_name}"[: w // 2 - 2]
+        display_value = f"{current_value}"[: w // 2 - 4]
 
         try:
             color = get_color(
                 "settings_sensitive" if option in sensitive_settings else "settings_default",
                 reverse=(idx == menu_state.selected_index),
             )
-            menu_pad.addstr(idx, 0, f"{display_option:<{width // 2 - 2}} {display_value}".ljust(width - 8), color)
+            menu_pad.addstr(idx, 0, f"{display_option:<{w // 2 - 2}} {display_value}".ljust(w - 8), color)
         except curses.error:
             pass
 
@@ -100,7 +113,7 @@ def display_menu() -> tuple[object, object]:  # curses.window or pad types
         save_position = menu_height - 2
         menu_win.addstr(
             save_position,
-            (width - len(save_option)) // 2,
+            (w - len(save_option)) // 2,
             save_option,
             get_color("settings_save", reverse=(menu_state.selected_index == len(menu_state.current_menu))),
         )
@@ -134,7 +147,6 @@ def draw_help_window(
     max_help_lines: int,
     transformed_path: List[str],
 ) -> None:
-
     global help_win
 
     if "help_win" not in globals():
@@ -145,8 +157,9 @@ def draw_help_window(
     )
     help_y = menu_start_y + menu_height
 
+    # Use current terminal width for the help window width calculation
     help_win = update_help_window(
-        help_win, help_text, transformed_path, selected_option, max_help_lines, width, help_y, menu_start_x
+        help_win, help_text, transformed_path, selected_option, max_help_lines, get_menu_width(), help_y, menu_start_x
     )
 
 
@@ -231,10 +244,12 @@ def settings_menu(stdscr: object, interface: object) -> None:
             curses.update_lines_cols()
 
             menu_win.erase()
-            help_win.erase()
+            if help_win:
+                help_win.erase()
 
             menu_win.refresh()
-            help_win.refresh()
+            if help_win:
+                help_win.refresh()
 
         elif key == ord("\t") and menu_state.show_save_option:
             old_selected_index = menu_state.selected_index
@@ -254,12 +269,14 @@ def settings_menu(stdscr: object, interface: object) -> None:
             menu_state.need_redraw = True
             menu_state.start_index.append(0)
             menu_win.erase()
-            help_win.erase()
+            if help_win:
+                help_win.erase()
 
             # draw_help_window(menu_win.getbegyx()[0], menu_win.getbegyx()[1], menu_win.getmaxyx()[0], max_help_lines, menu_state.current_menu, selected_index, transform_menu_path(menu_state.menu_path))
 
             menu_win.refresh()
-            help_win.refresh()
+            if help_win:
+                help_win.refresh()
 
             if menu_state.show_save_option and menu_state.selected_index == len(options):
                 save_changes(interface, modified_settings, menu_state)
@@ -538,13 +555,15 @@ def settings_menu(stdscr: object, interface: object) -> None:
             menu_state.need_redraw = True
 
             menu_win.erase()
-            help_win.erase()
+            if help_win:
+                help_win.erase()
 
             # max_help_lines = 4
             # draw_help_window(menu_win.getbegyx()[0], menu_win.getbegyx()[1], menu_win.getmaxyx()[0], max_help_lines, menu_state.current_menu, selected_index, transform_menu_path(menu_state.menu_path))
 
             menu_win.refresh()
-            help_win.refresh()
+            if help_win:
+                help_win.refresh()
 
             # if len(menu_state.menu_path) < 2:
             #     modified_settings.clear()
