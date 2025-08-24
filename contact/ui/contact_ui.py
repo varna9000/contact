@@ -18,7 +18,7 @@ from contact.utilities.singleton import ui_state, interface_state, menu_state
 
 
 MIN_COL = 1  # "effectively zero" without breaking curses
-root_win = None  # set in main_ui
+root_win = None
 
 
 # Draw arrows for a specific window id (0=channel,1=messages,2=nodes).
