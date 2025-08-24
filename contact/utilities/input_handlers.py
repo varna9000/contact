@@ -4,6 +4,12 @@ import curses
 import ipaddress
 from typing import Any, Optional, List
 
+from contact.ui.colors import get_color
+from contact.ui.nav_utils import move_highlight, draw_arrows, wrap_text
+from contact.ui.dialog import dialog
+from contact.utilities.validation_rules import get_validation_for
+from contact.utilities.singleton import menu_state
+
 # Dialogs should be at most 80 cols, but shrink on small terminals
 MAX_DIALOG_WIDTH = 80
 MIN_DIALOG_WIDTH = 20
@@ -16,13 +22,6 @@ def get_dialog_width() -> int:
     except Exception:
         # Fallback if curses not ready yet
         return MAX_DIALOG_WIDTH
-
-
-from contact.ui.colors import get_color
-from contact.ui.nav_utils import move_highlight, draw_arrows, wrap_text
-from contact.ui.dialog import dialog
-from contact.utilities.validation_rules import get_validation_for
-from contact.utilities.singleton import menu_state
 
 
 def invalid_input(window: curses.window, message: str, redraw_func: Optional[callable] = None) -> None:
