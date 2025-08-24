@@ -183,6 +183,7 @@ def settings_menu(stdscr: object, interface: object) -> None:
 
     menu_state.need_redraw = True
     menu_state.show_save_option = False
+    new_value_name = None
 
     while True:
         if menu_state.need_redraw:
@@ -515,8 +516,16 @@ def settings_menu(stdscr: object, interface: object) -> None:
                 for key in menu_state.menu_path[3:]:  # Skip "Main Menu"
                     modified_settings = modified_settings.setdefault(key, {})
 
-                # Add the new value to the appropriate level
-                modified_settings[selected_option] = new_value
+                # For comparison, normalize enum numbers to names
+                compare_value = new_value
+                if field and field.enum_type and isinstance(new_value, int):
+                    enum_value_descriptor = field.enum_type.values_by_number.get(new_value)
+                    if enum_value_descriptor:
+                        compare_value = enum_value_descriptor.name
+
+                if compare_value != current_value:
+                    # Save the raw protobuf number, not the name
+                    modified_settings[selected_option] = new_value
 
                 # Convert enum string to int
                 if field and field.enum_type:
