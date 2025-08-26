@@ -7,6 +7,7 @@ from meshtastic import protocols
 from meshtastic.protobuf import config_pb2, mesh_pb2, portnums_pb2
 import contact.ui.default_config as config
 from contact.utilities.singleton import ui_state, interface_state
+import contact.utilities.telemetry_beautifier as tb
 
 
 def get_channels():
@@ -179,20 +180,42 @@ def parse_protobuf(packet: dict) -> Union[str, dict]:
         if isinstance(payload, str):
             return payload
 
+        # These portnumbers carry information visible elswhere in the app, so we just note them in the logs
+        match portnum:
+            case "TEXT_MESSAGE_APP":
+                return "✉️"
+            case "NODEINFO_APP":
+                return "Name identification payload"
+            case "TRACEROUTE_APP":
+                return "Traceroute payload"
+            case _:
+                pass
+
         handler = protocols.get(portnums_pb2.PortNum.Value(portnum)) if portnum is not None else None
         if handler is not None and handler.protobufFactory is not None:
             try:
                 pb = handler.protobufFactory()
                 pb.ParseFromString(bytes(payload))
+
+                # If we have position payload
+                if portnum == "POSITION_APP":
+                    return tb.get_chunks(str(pb))
+
+                # Part of TELEMETRY_APP portnum
                 if hasattr(pb, "device_metrics") and pb.HasField("device_metrics"):
-                    return str(pb.device_metrics).replace("\n", " ").replace("\r", " ").strip()
+                    return tb.get_chunks(str(pb.device_metrics))
+
+                # Part of TELEMETRY_APP portnum
                 if hasattr(pb, "environment_metrics") and pb.HasField("environment_metrics"):
-                    return str(pb.environment_metrics).replace("\n", " ").replace("\r", " ").strip()
+                    return tb.get_chunks(str(pb.environment_metrics))
+
+                # For other data, without implemented beautification, fallback to just printing the object
                 return str(pb).replace("\n", " ").replace("\r", " ").strip()
+
             except DecodeError:
                 return payload
 
-        return payload
+        # return payload
 
     except Exception:
         return payload
