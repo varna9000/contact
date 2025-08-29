@@ -442,12 +442,13 @@ def handle_backtick(stdscr: curses.window) -> None:
 
 def handle_ctrl_u(stdscr: curses.window) -> None:
     # """Handle Ctrl + U key events to toggle Node MAP"""
-    curses.endwin()
-    map.print_map()
-    # Show map untill any key is pressed
-    # or new curses update is coming
-    # TODO: handle curses update on background somehow so that we don't close map after
-    stdscr.getch()
+    if len(ui_state.map_positions) > 0:
+        curses.endwin()
+        map.print_map()
+        # Show map untill any key is pressed
+        # or new curses update is coming
+        # TODO: handle curses update on background somehow so that we don't close map after
+        stdscr.getch()
 
 
 
