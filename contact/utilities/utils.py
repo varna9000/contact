@@ -176,6 +176,7 @@ def parse_protobuf(packet: dict) -> Union[str, dict]:
         decoded = packet.get("decoded") or {}
         portnum = decoded.get("portnum")
         payload = decoded.get("payload")
+        node_id = packet.get("fromId")
 
         if isinstance(payload, str):
             return payload
@@ -199,15 +200,15 @@ def parse_protobuf(packet: dict) -> Union[str, dict]:
 
                 # If we have position payload
                 if portnum == "POSITION_APP":
-                    return tb.get_chunks(str(pb))
+                    return tb.get_chunks(str(pb), node_id)
 
                 # Part of TELEMETRY_APP portnum
                 if hasattr(pb, "device_metrics") and pb.HasField("device_metrics"):
-                    return tb.get_chunks(str(pb.device_metrics))
+                    return tb.get_chunks(str(pb.device_metrics), node_id)
 
                 # Part of TELEMETRY_APP portnum
                 if hasattr(pb, "environment_metrics") and pb.HasField("environment_metrics"):
-                    return tb.get_chunks(str(pb.environment_metrics))
+                    return tb.get_chunks(str(pb.environment_metrics), node_id)
 
                 # For other data, without implemented beautification, fallback to just printing the object
                 return str(pb).replace("\n", " ").replace("\r", " ").strip()
@@ -215,7 +216,7 @@ def parse_protobuf(packet: dict) -> Union[str, dict]:
             except DecodeError:
                 return payload
 
-        # return payload
+        #return payload
 
     except Exception:
         return payload

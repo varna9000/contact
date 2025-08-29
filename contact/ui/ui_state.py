@@ -32,7 +32,7 @@ class ChatUIState:
     show_save_option: bool = False
     menu_path: List[str] = field(default_factory=list)
     single_pane_mode: bool = False
-
+    map_positions: list = field(default_factory=list)
 
 @dataclass
 class InterfaceState:

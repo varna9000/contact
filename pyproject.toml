@@ -9,7 +9,9 @@ license = "GPL-3.0-only"
 readme = "README.md"
 requires-python = ">=3.9,<3.14"
 dependencies = [
-    "meshtastic (>=2.6.0,<3.0.0)"
+    "meshtastic (>=2.6.0,<3.0.0)",
+    "libsixel-python",
+    "py-staticmaps @ git+https://github.com/flopp/py-staticmaps"
 ]
 
 [project.urls]

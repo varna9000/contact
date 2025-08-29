@@ -53,7 +53,6 @@ logging.basicConfig(
 
 app_state.lock = threading.Lock()
 
-
 # ------------------------------------------------------------------------------
 # Main Program Logic
 # ------------------------------------------------------------------------------
@@ -74,6 +73,7 @@ def initialize_globals() -> None:
     ui_state.node_list = get_node_list()
     ui_state.single_pane_mode = config.single_pane_mode.lower() == "true"
     pub.subscribe(on_receive, "meshtastic.receive")
+
 
     init_nodedb()
     load_messages_from_db()

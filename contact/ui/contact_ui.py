@@ -15,11 +15,10 @@ import contact.ui.default_config as config
 import contact.ui.dialog
 from contact.ui.nav_utils import move_main_highlight, draw_main_arrows, get_msg_window_lines, wrap_text
 from contact.utilities.singleton import ui_state, interface_state, menu_state
-
+import contact.utilities.show_map as map
 
 MIN_COL = 1  # "effectively zero" without breaking curses
 root_win = None
-
 
 # Draw arrows for a specific window id (0=channel,1=messages,2=nodes).
 def draw_window_arrows(window_id: int) -> None:
@@ -218,6 +217,9 @@ def main_ui(stdscr: curses.window) -> None:
 
         elif char == chr(16):  # Ctrl + P for Packet Log
             handle_ctrl_p()
+
+        elif char == chr(21):  # Ctrl + U for MAP
+            handle_ctrl_u(stdscr)
 
         elif char == curses.KEY_RESIZE:
             input_text = ""
@@ -436,6 +438,17 @@ def handle_backtick(stdscr: curses.window) -> None:
     curses.curs_set(1)
     refresh_node_list()
     handle_resize(stdscr, False)
+
+
+def handle_ctrl_u(stdscr: curses.window) -> None:
+    # """Handle Ctrl + U key events to toggle Node MAP"""
+    curses.endwin()
+    map.print_map()
+    # Show map untill any key is pressed
+    # or new curses update is coming
+    # TODO: handle curses update on background somehow so that we don't close map after
+    stdscr.getch()
+
 
 
 def handle_ctrl_p() -> None:
