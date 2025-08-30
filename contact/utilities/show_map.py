@@ -5,6 +5,11 @@ from io import BytesIO
 import os
 import sys
 from contact.utilities.singleton import ui_state
+import array
+import fcntl
+import termios
+from PIL import Image
+import curses
 
 class TextLabel(staticmaps.Object):
     def __init__(self, latlng: s2sphere.LatLng, text: str) -> None:
@@ -52,10 +57,26 @@ class TextLabel(staticmaps.Object):
         renderer.draw().line(path, fill=(255, 0, 0, 255))
         renderer.draw().text((x - tw / 2, y - self._arrow - h / 2 - th / 2), self._text, fill=(0, 0, 0, 255))
 
-def print_map() -> None:
+
+def get_terminal_size():
+    """ Get active terminal size in pixels """
+    buf = array.array('H', [0, 0, 0, 0])
+    fcntl.ioctl(1, termios.TIOCGWINSZ, buf)
+    return [buf[2], buf[3]]
+
+def write_sixel(data: bytes):
+    """Write raw sixel data directly to the terminal"""
+    fd = sys.__stdout__.fileno()
+    os.write(fd, data)
+    # Flush original stdout to terminal
+    os.fsync(fd)
+
+def print_map(stdscr: curses.window) -> None:
     """ Print sixel decoded node map on the screen """
 
-    # Clearing terminal
+    # Temporary exit curses so we can print the binary sixel data
+    curses.endwin()
+    # Clear terminal before printing sixel
     os.system('cls' if os.name == 'nt' else 'clear')
 
     context = staticmaps.Context()
@@ -81,8 +102,13 @@ def print_map() -> None:
     # node1 = staticmaps.create_latlng(43.943434, 24.090991)
     # context.add_object(TextLabel(node1, "name"))
 
-    # render non-anti-aliased png
-    image = context.render_pillow(1000, 500).convert('RGB')
+    # Get reminal width and height for printing map fulscreen
+    w,h = get_terminal_size()
+
+    # Reduce resolution on half and resampel back to the terminal widht and height
+    # This make text more readable and nodes more identifiable
+    image = context.render_pillow(int(w/2), int(h/2)).convert('RGB')
+    image = image.resize((w, h), Image.Resampling.LANCZOS)
     width, height = image.size
 
     s = BytesIO()
@@ -90,49 +116,27 @@ def print_map() -> None:
 
     output = libsixel.sixel_output_new(lambda data, s: s.write(data), s)
 
+
     try:
         dither = libsixel.sixel_dither_new(256)
         libsixel.sixel_dither_initialize(dither, data, width, height, libsixel.SIXEL_PIXELFORMAT_RGB888)
         try:
             libsixel.sixel_encode(data, width, height, 1, dither, output)
             # Print the map
-            sys.__stdout__.write(s.getvalue().decode('ascii'))
+            write_sixel(s.getvalue())
         finally:
             libsixel.sixel_dither_unref(dither)
     finally:
         libsixel.sixel_output_unref(output)
 
-    # Flush original stdout to  to terminal
-    sys.__stdout__.flush()
+    # Find a way to wait for keypress and go back to curses
+    # but app also gets update from other place, so I need to figure out where
+    # and make some logic so it proceeeds to the other ui only if keypressed
+    stdscr.getch()
 
-    # try:
-    #     if image.mode == 'RGBA':
-    #         dither = libsixel.sixel_dither_new(256)
-    #         libsixel.sixel_dither_initialize(dither, data, width, height, libsixel.SIXEL_PIXELFORMAT_RGBA8888)
-    #     elif image.mode == 'RGB':
-    #         dither = libsixel.sixel_dither_new(256)
-    #         libsixel.sixel_dither_initialize(dither, data, width, height, libsixel.SIXEL_PIXELFORMAT_RGB888)
-    #     elif image.mode == 'P':
-    #         palette = image.getpalette()
-    #         dither = libsixel.sixel_dither_new(256)
-    #         libsixel.sixel_dither_set_palette(dither, palette)
-    #         libsixel.sixel_dither_set_pixelformat(dither, libsixel.SIXEL_PIXELFORMAT_PAL8)
-    #     elif image.mode == 'L':
-    #         dither = libsixel.sixel_dither_get(libsixel.SIXEL_BUILTIN_G8)
-    #         libsixel.sixel_dither_set_pixelformat(dither, libsixel.SIXEL_PIXELFORMAT_G8)
-    #     elif image.mode == '1':
-    #         dither = libsixel.sixel_dither_get(libsixel.SIXEL_BUILTIN_G1)
-    #         libsixel.sixel_dither_set_pixelformat(dither, libsixel.SIXEL_PIXELFORMAT_G1)
-    #     else:
-    #         raise RuntimeError('unexpected image mode')
-    #     try:
-    #         libsixel.sixel_encode(data, width, height, 1, dither, output)
-    #         print(s.getvalue().decode('ascii'))
-    #     finally:
-    #         libsixel.sixel_dither_unref(dither)
-    # finally:
-    #     libsixel.sixel_output_unref(output)
-
+    # Resume curses
+    stdscr.refresh()
+    curses.doupdate()
 
 if __name__ == "__main__":
     print_map()
