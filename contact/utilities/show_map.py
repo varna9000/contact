@@ -76,6 +76,7 @@ def print_map(stdscr: curses.window) -> None:
 
     # Temporary exit curses so we can print the binary sixel data
     curses.endwin()
+
     # Clear terminal before printing sixel
     os.system('cls' if os.name == 'nt' else 'clear')
 

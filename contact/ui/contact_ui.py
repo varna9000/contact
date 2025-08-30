@@ -19,13 +19,14 @@ import contact.utilities.show_map as map
 
 MIN_COL = 1  # "effectively zero" without breaking curses
 root_win = None
+map_mode = False
 
 # Draw arrows for a specific window id (0=channel,1=messages,2=nodes).
 def draw_window_arrows(window_id: int) -> None:
 
     if window_id == 0:
         draw_main_arrows(channel_win, len(ui_state.channel_list), window=0)
-        channel_win.refresh()
+        channel_win.noutrefresh()
     elif window_id == 1:
         msg_line_count = messages_pad.getmaxyx()[0]
         draw_main_arrows(
@@ -34,10 +35,10 @@ def draw_window_arrows(window_id: int) -> None:
             window=1,
             log_height=packetlog_win.getmaxyx()[0],
         )
-        messages_win.refresh()
+        messages_win.noutrefresh()
     elif window_id == 2:
         draw_main_arrows(nodes_win, len(ui_state.node_list), window=2)
-        nodes_win.refresh()
+        nodes_win.noutrefresh()
 
 
 def compute_widths(total_w: int, focus: int):
@@ -57,7 +58,7 @@ def paint_frame(win, selected: bool) -> None:
     win.attrset(get_color("window_frame_selected") if selected else get_color("window_frame"))
     win.box()
     win.attrset(get_color("window_frame"))
-    win.refresh()
+    win.noutrefresh()
 
 
 def handle_resize(stdscr: curses.window, firstrun: bool) -> None:
@@ -145,7 +146,7 @@ def handle_resize(stdscr: curses.window, firstrun: bool) -> None:
     # Draw window borders
     for win in [channel_win, entry_win, nodes_win, messages_win, function_win]:
         win.box()
-        win.refresh()
+        win.noutrefresh()
 
     entry_win.keypad(True)
     curses.curs_set(1)
@@ -162,11 +163,9 @@ def handle_resize(stdscr: curses.window, firstrun: bool) -> None:
         # In this case we'll see another curses.KEY_RESIZE in our key handler and draw again later.
         pass
 
-
 def main_ui(stdscr: curses.window) -> None:
     """Main UI loop for the curses interface."""
-    global input_text
-    global root_win
+    global input_text, root_win, map_mode
 
     root_win = stdscr
     input_text = ""
@@ -174,78 +173,80 @@ def main_ui(stdscr: curses.window) -> None:
     get_channels()
     handle_resize(stdscr, True)
 
+    # Enable non-blocking input mode for the entry window
+    entry_win.nodelay(True)
+
     while True:
-        draw_text_field(entry_win, f"Input: {(input_text or '')[-(stdscr.getmaxyx()[1] - 10):]}", get_color("input"))
+        # Get user input (non-blocking). It returns -1 if no key is pressed.
+        try:
+            char = entry_win.get_wch()
+        except curses.error:
+            char = -1 # No input
 
-        # Get user input from entry window
-        char = entry_win.get_wch()
-
-        # draw_debug(f"Keypress: {char}")
-
-        if char == curses.KEY_UP:
-            handle_up()
-
-        elif char == curses.KEY_DOWN:
-            handle_down()
-
-        elif char == curses.KEY_HOME:
-            handle_home()
-
-        elif char == curses.KEY_END:
-            handle_end()
-
-        elif char == curses.KEY_PPAGE:
-            handle_pageup()
-
-        elif char == curses.KEY_NPAGE:
-            handle_pagedown()
-
-        elif char == curses.KEY_LEFT or char == curses.KEY_RIGHT:
-            handle_leftright(char)
-
-        elif char in (chr(curses.KEY_ENTER), chr(10), chr(13)):
-            input_text = handle_enter(input_text)
-
-        elif char == chr(20):  # Ctrl + t for Traceroute
-            handle_ctrl_t(stdscr)
-
-        elif char in (curses.KEY_BACKSPACE, chr(127)):
-            input_text = handle_backspace(entry_win, input_text)
-
-        elif char == "`":  # ` Launch the settings interface
-            handle_backtick(stdscr)
-
-        elif char == chr(16):  # Ctrl + P for Packet Log
-            handle_ctrl_p()
-
-        elif char == chr(21):  # Ctrl + U for MAP
-            handle_ctrl_u(stdscr)
-
-        elif char == curses.KEY_RESIZE:
-            input_text = ""
-            handle_resize(stdscr, False)
-
-        elif char == chr(4):  # Ctrl + D to delete current channel or node
-            handle_ctrl_d()
-
-        elif char == chr(31):  # Ctrl + / to search
-            handle_ctrl_fslash()
-
-        elif char == chr(6):  # Ctrl + F to toggle favorite
-            handle_ctrl_f(stdscr)
-
-        elif char == chr(7):  # Ctrl + G to toggle ignored
-            handle_ctlr_g(stdscr)
-
-        elif char == chr(27):  # Escape to exit
-            break
-
-        else:
-            # Append typed character to input text
-            if isinstance(char, str):
-                input_text += char
+        # --- Process input ONLY if a key was pressed ---
+        if char != -1:
+            if char == curses.KEY_UP:
+                handle_up()
+            elif char == curses.KEY_DOWN:
+                handle_down()
+            elif char == curses.KEY_HOME:
+                handle_home()
+            elif char == curses.KEY_END:
+                handle_end()
+            elif char == curses.KEY_PPAGE:
+                handle_pageup()
+            elif char == curses.KEY_NPAGE:
+                handle_pagedown()
+            elif char == curses.KEY_LEFT or char == curses.KEY_RIGHT:
+                handle_leftright(char)
+            elif char in (chr(curses.KEY_ENTER), chr(10), chr(13)):
+                if not map_mode: # Only handle enter if not in map mode
+                    input_text = handle_enter(input_text)
+            elif char == chr(20):  # Ctrl + t for Traceroute
+                handle_ctrl_t(stdscr)
+            elif char in (curses.KEY_BACKSPACE, chr(127)):
+                if not map_mode: # Only handle backspace if not in map mode
+                    input_text = handle_backspace(entry_win, input_text)
+            elif char == "`":  # ` Launch the settings interface
+                handle_backtick(stdscr)
+            elif char == chr(16):  # Ctrl + P for Packet Log
+                handle_ctrl_p()
+            elif char == chr(21):  # Ctrl + U for MAP
+                handle_ctrl_u(stdscr) # Toggles map_mode
+            elif char == curses.KEY_RESIZE:
+                input_text = ""
+                handle_resize(stdscr, False)
+            elif char == chr(4):  # Ctrl + D to delete current channel or node
+                handle_ctrl_d()
+            elif char == chr(31):  # Ctrl + / to search
+                handle_ctrl_fslash()
+            elif char == chr(6):  # Ctrl + F to toggle favorite
+                handle_ctrl_f(stdscr)
+            elif char == chr(7):  # Ctrl + G to toggle ignored
+                handle_ctlr_g(stdscr)
+            elif char == chr(27):  # Escape to exit
+                break
             else:
-                input_text += chr(char)
+                if not map_mode and isinstance(char, str):
+                    input_text += char
+
+        # --- Redraw the UI state every loop iteration ---
+        # This prepares the virtual screen with the latest UI state.
+        if not map_mode:
+            draw_text_field(entry_win, f"Input: {(input_text or '')[-(stdscr.getmaxyx()[1] - 10):]}", get_color("input"))
+            # If other parts of your UI update dynamically (e.g., from a network thread),
+            # you would call their respective draw functions here as well.
+            # Example:
+            # draw_channel_list()
+            # draw_node_list()
+
+        # --- Master screen update, controlled by map_mode ---
+        if not map_mode:
+            # Only update the physical screen if we are NOT in map mode.
+            curses.doupdate()
+
+        # Prevent the loop from consuming 100% CPU
+        #time.sleep(0.05)
 
 
 def handle_up() -> None:
@@ -422,9 +423,9 @@ def handle_backspace(entry_win: curses.window, input_text: str) -> str:
         input_text = input_text[:-1]
         y, x = entry_win.getyx()
         entry_win.move(y, x - 1)
-        entry_win.addch(" ")  #
+        entry_win.addch(" ")
         entry_win.move(y, x - 1)
-    entry_win.refresh()
+    entry_win.noutrefresh()
     return input_text
 
 
@@ -441,14 +442,22 @@ def handle_backtick(stdscr: curses.window) -> None:
 
 
 def handle_ctrl_u(stdscr: curses.window) -> None:
-    # """Handle Ctrl + U key events to toggle Node MAP"""
-    if len(ui_state.map_positions) > 0:
-        #curses.endwin()
-        map.print_map(stdscr)
-        #stdscr.getch()
-        # Show map untill any key is pressed
-        # or new curses update is coming
-        # TODO: handle curses update on background somehow so that we don't close map after
+    """Handle Ctrl + U key events to toggle Node MAP."""
+    global map_mode
+
+    # Enter map mode where screen is not auto refreshed
+    map_mode = True
+
+    if map_mode:
+        # If we are entering map mode, draw the map once
+        if len(ui_state.map_positions) > 0:
+            map.print_map(stdscr)
+            #stdscr.refresh() # Use a direct refresh here to draw the map immediately
+
+        #handle_resize(stdscr, False)
+
+        # Exit map mode and got back to regular screen refresh
+        map_mode = False
 
 
 def handle_ctrl_p() -> None:
@@ -619,7 +628,7 @@ def draw_channel_list() -> None:
     paint_frame(channel_win, selected=(ui_state.current_window == 0))
     refresh_pad(0)
     draw_window_arrows(0)
-    channel_win.refresh()
+    channel_win.noutrefresh()
 
 
 def draw_messages_window(scroll_to_bottom: bool = False) -> None:
@@ -629,6 +638,11 @@ def draw_messages_window(scroll_to_bottom: bool = False) -> None:
         return
 
     messages_pad.erase()
+
+    if not ui_state.channel_list:
+        paint_frame(messages_win, selected=(ui_state.current_window == 1))
+        messages_win.noutrefresh()
+        return
 
     channel = ui_state.channel_list[ui_state.selected_channel]
 
@@ -665,11 +679,11 @@ def draw_messages_window(scroll_to_bottom: bool = False) -> None:
     else:
         ui_state.selected_message = max(min(ui_state.selected_message, msg_line_count - visible_lines), 0)
 
-    messages_win.refresh()
+    messages_win.noutrefresh()
     refresh_pad(1)
     draw_packetlog_win()
     draw_window_arrows(1)
-    messages_win.refresh()
+    messages_win.noutrefresh()
     if ui_state.current_window == 4:
         menu_state.need_redraw = True
 
@@ -681,9 +695,11 @@ def draw_node_list() -> None:
     if ui_state.current_window != 2 and ui_state.single_pane_mode:
         return
 
-    # This didn't work, for some reason an error is thown on startup, so we just create the pad every time
-    # if nodes_pad is None:
-    # nodes_pad = curses.newpad(1, 1)
+    if not ui_state.node_list:
+        paint_frame(nodes_win, selected=(ui_state.current_window == 2))
+        nodes_win.noutrefresh()
+        return
+
     nodes_pad = curses.newpad(1, 1)
 
     try:
@@ -710,15 +726,15 @@ def draw_node_list() -> None:
         )
 
     paint_frame(nodes_win, selected=(ui_state.current_window == 2))
-    nodes_win.refresh()
+    nodes_win.noutrefresh()
     refresh_pad(2)
     draw_window_arrows(2)
-    nodes_win.refresh()
+    nodes_win.noutrefresh()
 
     # Restore cursor to input field
     entry_win.keypad(True)
     curses.curs_set(1)
-    entry_win.refresh()
+    entry_win.noutrefresh()
 
     if ui_state.current_window == 4:
         menu_state.need_redraw = True
@@ -780,7 +796,7 @@ def scroll_messages(direction: int) -> None:
         0, min(ui_state.start_index[ui_state.current_window], max_index - visible_height + 1)
     )
 
-    messages_win.refresh()
+    messages_win.noutrefresh()
     refresh_pad(1)
     draw_window_arrows(ui_state.current_window)
 
@@ -865,7 +881,7 @@ def draw_packetlog_win() -> None:
     # Restore cursor to input field
     entry_win.keypad(True)
     curses.curs_set(1)
-    entry_win.refresh()
+    entry_win.noutrefresh()
 
 
 def search(win: int) -> None:
@@ -893,10 +909,10 @@ def search(win: int) -> None:
                 search_text = search_text[:-1]
                 y, x = entry_win.getyx()
                 entry_win.move(y, x - 1)
-                entry_win.addch(" ")  #
+                entry_win.addch(" ")
                 entry_win.move(y, x - 1)
                 entry_win.erase()
-                entry_win.refresh()
+                entry_win.noutrefresh()
         elif isinstance(char, str):
             search_text += char
 
@@ -922,7 +938,7 @@ def draw_node_details() -> None:
     node = None
     try:
         node = interface_state.interface.nodesByNum[ui_state.node_list[ui_state.selected_node]]
-    except KeyError:
+    except (KeyError, IndexError):
         return
 
     function_win.erase()
@@ -1023,7 +1039,7 @@ def refresh_pad(window: int) -> None:
 
         if ui_state.display_log:
             packetlog_win.box()
-            packetlog_win.refresh()
+            packetlog_win.noutrefresh()
 
     elif window == 2:
         pad = nodes_pad
@@ -1069,7 +1085,7 @@ def refresh_pad(window: int) -> None:
     if bottom < top or right < left:
         return
 
-    pad.refresh(
+    pad.noutrefresh(
         start_index,
         0,
         top,
@@ -1099,9 +1115,9 @@ def draw_centered_text_field(win: curses.window, text: str, y_offset: int, color
     x = (width - len(text)) // 2
     y = (height // 2) + y_offset
     win.addstr(y, x, text, color)
-    win.refresh()
+    win.noutrefresh()
 
 
 def draw_debug(value: Union[str, int]) -> None:
-    function_win.addstr(1, 1, f"debug: {value}    ")
-    function_win.refresh()
+    function_win.addstr(1, 1, f"debug: {value}      ")
+    function_win.noutrefresh()
