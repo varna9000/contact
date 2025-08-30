@@ -449,12 +449,9 @@ def handle_ctrl_u(stdscr: curses.window) -> None:
     map_mode = True
 
     if map_mode:
-        # If we are entering map mode, draw the map once
+        # If we have received at least one position, draw the map
         if len(ui_state.map_positions) > 0:
             map.print_map(stdscr)
-            #stdscr.refresh() # Use a direct refresh here to draw the map immediately
-
-        #handle_resize(stdscr, False)
 
         # Exit map mode and got back to regular screen refresh
         map_mode = False

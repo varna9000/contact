@@ -106,7 +106,7 @@ def print_map(stdscr: curses.window) -> None:
     # Get reminal width and height for printing map fulscreen
     w,h = get_terminal_size()
 
-    # Reduce resolution on half and resampel back to the terminal widht and height
+    # Reduce resolution in half and resample back to the terminal width and height
     # This make text more readable and nodes more identifiable
     image = context.render_pillow(int(w/2), int(h/2)).convert('RGB')
     image = image.resize((w, h), Image.Resampling.LANCZOS)
@@ -116,7 +116,6 @@ def print_map(stdscr: curses.window) -> None:
     data = image.tobytes()
 
     output = libsixel.sixel_output_new(lambda data, s: s.write(data), s)
-
 
     try:
         dither = libsixel.sixel_dither_new(256)
@@ -130,14 +129,5 @@ def print_map(stdscr: curses.window) -> None:
     finally:
         libsixel.sixel_output_unref(output)
 
-    # Find a way to wait for keypress and go back to curses
-    # but app also gets update from other place, so I need to figure out where
-    # and make some logic so it proceeeds to the other ui only if keypressed
+    # Wait for keypress before we exit map mode
     stdscr.getch()
-
-    # Resume curses
-    stdscr.refresh()
-    curses.doupdate()
-
-if __name__ == "__main__":
-    print_map()
